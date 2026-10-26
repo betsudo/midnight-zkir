@@ -285,12 +285,6 @@ pub fn from_bytes_incircuit(
         }
 
         IrType::Curve25519Point => {
-            let bytes: &[AssignedByte<F>; 32] = bytes.try_into().map_err(|_| {
-                plonk::Error::Synthesis(format!(
-                    "from_bytes of {val_t:?} expects Bytes<32>, got Bytes<{}>",
-                    bytes.len()
-                ))
-            })?;
             let value = values.map(|v| {
                 <&[u8; 32]>::try_from(v.as_slice())
                     .ok()
@@ -298,10 +292,11 @@ pub fn from_bytes_incircuit(
                     .and_then(|p: curve25519::Curve25519| Curve25519Subgroup::from_edwards(p.0))
                     .unwrap_or(Curve25519Subgroup::generator())
             });
-            std_lib
-                .curve25519()
-                .from_canonical_compressed_bytes(layouter, bytes, value)
-                .map(Curve25519Point)
+            let curve = std_lib.curve25519();
+            let p = curve.assign(layouter, value)?;
+            let encoding = curve.to_canonical_compressed_bytes(layouter, &p)?;
+            assert_bytes_equal(std_lib, layouter, bytes, &encoding)?;
+            Ok(Curve25519Point(p))
         }
 
         _ => Err(plonk::Error::Synthesis(format!(

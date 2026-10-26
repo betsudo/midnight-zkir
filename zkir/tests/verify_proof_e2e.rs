@@ -46,14 +46,12 @@ use std::ops::Rem;
 use std::sync::OnceLock;
 use std::time::Instant;
 
-use group::Group;
 use midnight_circuits::biguint::AssignedBigUint;
 use midnight_circuits::hash::poseidon::PoseidonState;
 use midnight_circuits::instructions::{
     AssertionInstructions, AssignmentInstructions, PublicInputInstructions,
 };
 use midnight_circuits::types::{AssignedBit, AssignedNative};
-use midnight_circuits::verifier::SelfEmulation;
 use midnight_curves::{Bls12, Fq};
 use midnight_proofs::circuit::{Layouter, Value};
 use midnight_proofs::plonk;
@@ -74,8 +72,8 @@ use rand_chacha::ChaCha20Rng;
 use serialize::{Deserializable, Serializable};
 use transient_crypto::curve::Fr;
 use transient_crypto::proofs::{
-    InnerProofWitness, InnerSelfEmulation, ParamsProver, Proof, ProofPreimage, ProverKey,
-    TranscriptHash, VerifierKey, Zkir, accumulator_pi_len,
+    InnerProofWitness, ParamsProver, Proof, ProofPreimage, ProverKey, TranscriptHash, VerifierKey,
+    Zkir, accumulator_pi_len,
 };
 
 use crate::verify_proof_common::{
@@ -488,9 +486,9 @@ async fn impact_between_two_proofs_leaves_accumulators_intact() {
     }
 }
 
-/// A proof made under a different verifying key is rejected. The same relation
-/// in a larger domain gives a same-length proof, caught by the pairing; a
-/// different relation fails in preparation.
+/// A proof made under a different verifying key is rejected. Both the same
+/// relation in a larger domain and a different relation with the same chips
+/// give a same-length proof, caught by the pairing.
 #[actix_rt::test]
 #[ignore = "slow: builds and proves a high-k outer circuit"]
 async fn proof_from_another_vk_is_rejected() {
@@ -548,8 +546,8 @@ async fn proof_from_another_vk_is_rejected() {
     .await;
     assert_eq!(
         stage,
-        Rejection::AtPreparation,
-        "a proof of another relation must fail in preparation"
+        Rejection::AtPairing,
+        "a proof of another relation must be caught by the pairing"
     );
 }
 
@@ -829,8 +827,8 @@ fn proof_reads(vk_blob: &[u8], instance: &[Fq], proof: &[u8]) -> Vec<(Range<usiz
     let mut transcript = RecordingTranscript::init_from_bytes(proof);
     plonk::prepare::<Fq, KZGCommitmentScheme<Bls12>, RecordingTranscript>(
         vk.vk(),
-        &[&[<InnerSelfEmulation as SelfEmulation>::C::identity()]],
-        &[&[instance]],
+        &[],
+        &[&[], instance],
         &mut transcript,
     )
     .expect("prepare a valid proof");

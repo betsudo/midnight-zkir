@@ -10,3 +10,6 @@
   `verify_accumulator` instructions (ZKIR 4). `prepare_verification`  outputs an
   accumulator, which must reach exactly one `verify_accumulator` (possibly
   through `accumulate`).
+- Add the `UnboundVk` type and the `AssignUnboundVk` and `BindVk`
+  instructions, which witness the verifying key of an inner circuit with every
+  chip enabled and bind it to a trusted hash.

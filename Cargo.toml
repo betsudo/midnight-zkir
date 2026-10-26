@@ -23,18 +23,30 @@ panic = "abort"
 
 # base-crypto 1.1.0, serialize 1.2.0, and transient-crypto 4.0.0 are not yet
 # published to crates.io; resolve them from the midnight-ledger repository, at
-# the merge commit of midnight-ledger PR #791 (`DeferredAccumulator::new`) on ledger-10.
+# iquerejeta/midnight-zk-unbound-vk (ledger-10 built against the midnight-zk below).
 # They all come from the same rev so their interlinked path dependencies unify
 # to a single source.
 [patch.crates-io]
-midnight-base-crypto = { git = "https://github.com/midnightntwrk/midnight-ledger", rev = "6f72b82f0a86e32622538bf2e036c43d5b6e64b8" }
-midnight-serialize = { git = "https://github.com/midnightntwrk/midnight-ledger", rev = "6f72b82f0a86e32622538bf2e036c43d5b6e64b8" }
-midnight-transient-crypto = { git = "https://github.com/midnightntwrk/midnight-ledger", rev = "6f72b82f0a86e32622538bf2e036c43d5b6e64b8" }
+midnight-base-crypto = { git = "https://github.com/midnightntwrk/midnight-ledger", rev = "adf8f5e787fad6c9c9f1df51a87868e7a52d973e" }
+midnight-serialize = { git = "https://github.com/midnightntwrk/midnight-ledger", rev = "adf8f5e787fad6c9c9f1df51a87868e7a52d973e" }
+midnight-transient-crypto = { git = "https://github.com/midnightntwrk/midnight-ledger", rev = "adf8f5e787fad6c9c9f1df51a87868e7a52d973e" }
 # Not needed for the build itself, but without this transient-crypto pulls
 # storage-core (and its macro crates) from crates.io at the same name+version
 # as the git copies above, and nix's importCargoLock cannot vendor the same
 # name+version from two sources.
-midnight-storage-core = { git = "https://github.com/midnightntwrk/midnight-ledger", rev = "6f72b82f0a86e32622538bf2e036c43d5b6e64b8" }
-# `AssignedAccumulator::is_collapsed` is not released yet; resolve it from the
-# head of midnight-zk PR #553 until it ships.
-midnight-circuits = { git = "https://github.com/midnightntwrk/midnight-zk", rev = "604f739269aaff06ed14a7447779d70840d7bd70" }
+midnight-storage-core = { git = "https://github.com/midnightntwrk/midnight-ledger", rev = "adf8f5e787fad6c9c9f1df51a87868e7a52d973e" }
+# `UnboundVk` and `AssignedAccumulator::is_collapsed` are not released yet;
+# resolve midnight-zk from the head of midnight-zk PR #616 until they ship.
+# Spelled with `www.` because Cargo refuses a patch that points to the source
+# it patches, as the one below does.
+midnight-curves = { git = "https://www.github.com/midnightntwrk/midnight-zk", rev = "17ae77b7cb84ea1b23edfa250be7f9ed61dd694f" }
+midnight-proofs = { git = "https://www.github.com/midnightntwrk/midnight-zk", rev = "17ae77b7cb84ea1b23edfa250be7f9ed61dd694f" }
+midnight-circuits = { git = "https://www.github.com/midnightntwrk/midnight-zk", rev = "17ae77b7cb84ea1b23edfa250be7f9ed61dd694f" }
+midnight-zk-stdlib = { git = "https://www.github.com/midnightntwrk/midnight-zk", rev = "17ae77b7cb84ea1b23edfa250be7f9ed61dd694f" }
+
+# zk-stdlib's sha3 and blake2b circuits depend on midnight-zk by git; unify them
+# with the copy above.
+[patch."https://github.com/midnightntwrk/midnight-zk"]
+midnight-curves = { git = "https://www.github.com/midnightntwrk/midnight-zk", rev = "17ae77b7cb84ea1b23edfa250be7f9ed61dd694f" }
+midnight-proofs = { git = "https://www.github.com/midnightntwrk/midnight-zk", rev = "17ae77b7cb84ea1b23edfa250be7f9ed61dd694f" }
+midnight-circuits = { git = "https://www.github.com/midnightntwrk/midnight-zk", rev = "17ae77b7cb84ea1b23edfa250be7f9ed61dd694f" }

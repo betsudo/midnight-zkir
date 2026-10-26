@@ -21,11 +21,10 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use anyhow::{anyhow, bail};
-use group::Group;
 use midnight_circuits::hash::poseidon::PoseidonState;
 use midnight_circuits::instructions::AssignmentInstructions;
 use midnight_circuits::types::{AssignedBit, AssignedNative};
-use midnight_circuits::verifier::{Accumulator, AssignedAccumulator, SelfEmulation, fixed_bases};
+use midnight_circuits::verifier::{Accumulator, AssignedAccumulator, fixed_bases};
 use midnight_curves::Bls12;
 use midnight_proofs::{
     circuit::{Layouter, Value},
@@ -41,13 +40,6 @@ use transient_crypto::proofs::{DeferredAccumulator, InnerSelfEmulation as S};
 
 use crate::ir::{Identifier, Instruction as I, IrSource, Operand};
 use crate::ir_instructions::accumulate::trivial_accumulator;
-
-/// Label prefix for an inner verifying key's fixed bases.
-///
-/// Derived from the blob's own digest.
-fn vk_name(vk_blob: &[u8]) -> String {
-    format!("inner_vk_{}", const_hex::encode(Sha256::digest(vk_blob)))
-}
 
 /// Off-circuit half of `prepare_verification`: partially verifies the inner proof and
 /// returns the accumulator the check defers, resolved and collapsed.
@@ -67,8 +59,7 @@ pub fn prepare_verification_offcircuit(
     let vk = MidnightVK::read(&mut &vk_blob[..], SerdeFormat::Processed)
         .map_err(|e| anyhow!("reading inner verifying key: {e}"))?;
     let plonk_vk = vk.vk();
-    let vk_name = vk_name(vk_blob);
-    let bases = fixed_bases::<S>(&vk_name, plonk_vk);
+    let bases = fixed_bases::<S>(plonk_vk);
 
     let mut transcript = CircuitTranscript::<PoseidonState<outer::Scalar>>::init_from_bytes(proof);
     let dual_msm = plonk::prepare::<
@@ -77,14 +68,13 @@ pub fn prepare_verification_offcircuit(
         CircuitTranscript<PoseidonState<outer::Scalar>>,
     >(
         plonk_vk,
-        // A single identity committed instance: committed instances are not
-        // supported yet.
-        &[&[<S as SelfEmulation>::C::identity()]],
-        &[&[instance]],
+        // No committed instance: its column is an empty instance column.
+        &[],
+        &[&[], instance],
         &mut transcript,
     )?;
 
-    let mut acc = Accumulator::<S>::from_dual_msm(dual_msm, &vk_name, &bases);
+    let mut acc = Accumulator::<S>::from_dual_msm(dual_msm, &bases);
     acc.resolve_fixed_bases(&bases);
     acc.collapse();
 
@@ -108,7 +98,6 @@ pub fn prepare_verification_incircuit(
     let vk = MidnightVK::read(&mut &vk_blob[..], SerdeFormat::Processed)
         .map_err(|e| Error::Synthesis(format!("inner verifying key: {e}")))?;
     let plonk_vk = vk.vk();
-    let vk_name = vk_name(vk_blob);
     let verifier = std.verifier();
     let bls = std.bls12_381();
     let scalar_chip = bls.scalar_field_chip();
@@ -119,24 +108,20 @@ pub fn prepare_verification_incircuit(
     // ones the fixed bases below are taken from.
     let assigned_vk = verifier.assign_fixed_vk(
         layouter,
-        &vk_name,
         plonk_vk.get_domain(),
         plonk_vk.cs(),
         plonk_vk.transcript_repr(),
     )?;
 
-    // Assign the inner VK's fixed bases in-circuit, keyed by the same names
+    // Assign the inner VK's fixed bases in-circuit, keyed by the same labels
     // `fixed_bases` produces.
     let mut assigned_bases = BTreeMap::new();
-    for (name, base) in fixed_bases::<S>(&vk_name, plonk_vk) {
-        assigned_bases.insert(name, bls.assign_fixed(layouter, base)?);
+    for (label, base) in fixed_bases::<S>(plonk_vk) {
+        assigned_bases.insert(label, bls.assign_fixed(layouter, base)?);
     }
 
-    // The committed instance is a single identity point (we do not support
-    // committed instances), mirroring the off-circuit `&[&[C::identity()]]`.
-    let committed = [bls.assign_fixed(layouter, <S as SelfEmulation>::C::identity())?];
-
-    let mut acc = verifier.prepare(layouter, &assigned_vk, &committed, &[instance], proof)?;
+    // Matches the off-circuit `&[]` committed and `&[&[], instance]` instances.
+    let mut acc = verifier.prepare(layouter, &assigned_vk, &[], &[&[], instance], proof)?;
     acc.resolve_fixed_bases(&assigned_bases);
     AssignedAccumulator::scale_by_bit(layouter, scalar_chip, guard, &mut acc)?;
     acc.collapse(layouter, bls, scalar_chip)?;

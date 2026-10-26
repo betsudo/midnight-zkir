@@ -39,6 +39,10 @@ use crate::ir_instructions::prepare_verification::{
 };
 use crate::ir_instructions::select::{select_incircuit, select_offcircuit};
 use crate::ir_instructions::to_bytes::{to_bytes_incircuit, to_bytes_offcircuit};
+use crate::ir_instructions::unbound_vk::{
+    assign_unbound_vk_incircuit, assign_unbound_vk_offcircuit, bind_vk_incircuit,
+    bind_vk_offcircuit,
+};
 use crate::ir_types::{BYTES_PER_FIELD_ELEMENT, CircuitValue, IrType, IrValue, MAX_BYTES_LEN};
 
 use super::ir::{Identifier, Instruction as I, IrSource, Operand};
@@ -863,6 +867,19 @@ impl IrSource {
                     let value = decode_offcircuit(encoding, val_t)?;
                     memory.insert(output.clone(), value);
                 }
+                I::AssignUnboundVk { k, output } => {
+                    let (vk, nb_elements) = assign_unbound_vk_offcircuit(
+                        &preimage.private_transcript[private_transcript_outputs_idx..],
+                        *k,
+                    )?;
+                    private_transcript_outputs_idx += nb_elements;
+                    memory.insert(output.clone(), vk);
+                }
+                I::BindVk { vk, hash } => {
+                    let vk = resolve_operand(&memory, vk)?;
+                    let hash = resolve_operand(&memory, hash)?;
+                    bind_vk_offcircuit(vk, hash)?;
+                }
                 I::Output { vals } => {
                     if vals.len() != self.outputs.len() {
                         bail!(
@@ -1156,6 +1173,15 @@ impl Relation for IrSource {
             Ok(())
         };
 
+        // The value a witness-introducing instruction gave `id` in `preprocess`.
+        let witnessed = |id: &Identifier| {
+            witness.as_ref().map_with_result(|preproc| {
+                preproc.memory.get(id).cloned().ok_or_else(|| {
+                    Error::Synthesis(format!("Output {:?} not found in witness memory", id))
+                })
+            })
+        };
+
         let mut pi_idx: usize = 0;
         pi_push(&mut pi_idx, &mut zkir_pi_cells, binding_input)?;
 
@@ -1374,17 +1400,7 @@ impl Relation for IrSource {
                     val_t,
                     output,
                 } => {
-                    let value = witness.as_ref().map_with_result(|preproc| {
-                        preproc
-                            .memory
-                            .get(output)
-                            .cloned()
-                            .ok_or(Error::Synthesis(format!(
-                                "Output {:?} not found in witness memory",
-                                output
-                            )))
-                    })?;
-
+                    let value = witnessed(output)?;
                     mem_insert(
                         output.clone(),
                         assign_incircuit(std, layouter, val_t, &[value])?[0].clone(),
@@ -1695,6 +1711,15 @@ impl Relation for IrSource {
                     let assigned = assign_constant_incircuit(std, layouter, &value)?;
                     mem_insert(output.clone(), assigned, &mut memory)?;
                 }
+                I::AssignUnboundVk { k, output } => {
+                    let vk = assign_unbound_vk_incircuit(std, layouter, *k, witnessed(output)?)?;
+                    mem_insert(output.clone(), vk, &mut memory)?;
+                }
+                I::BindVk { vk, hash } => {
+                    let vk = resolve_operand(std, layouter, &memory, vk)?;
+                    let hash = resolve_operand(std, layouter, &memory, hash)?;
+                    bind_vk_incircuit(std, layouter, vk, hash)?;
+                }
                 I::Output { vals } => {
                     if vals.len() != self.outputs.len() {
                         return Err(Error::Synthesis(format!(
@@ -1860,13 +1885,15 @@ impl Relation for IrSource {
             self.instructions.iter().any(match_predicate)
         };
 
-        let involves_accumulators = involves_types(&[IrType::Accumulator])
+        // The in-circuit verifier needs the BLS12-381 and Poseidon chips.
+        let verifies_proofs = involves_types(&[IrType::Accumulator, IrType::UnboundVk])
             || involves_instructions(&|op| {
                 matches!(
                     op,
                     I::PrepareVerification { .. }
                         | I::Accumulate { .. }
                         | I::VerifyAccumulator { .. }
+                        | I::AssignUnboundVk { .. }
                 )
             });
 
@@ -1874,7 +1901,7 @@ impl Relation for IrSource {
             jubjub: involves_types(&[IrType::JubjubPoint, IrType::JubjubScalar])
                 || involves_instructions(&|op| matches!(op, I::HashToCurve { .. })),
             poseidon: self.do_communications_commitment
-                || involves_accumulators
+                || verifies_proofs
                 || involves_instructions(&|op| {
                     matches!(op, I::TransientHash { .. } | I::HashToCurve { .. })
                 }),
@@ -1883,6 +1910,7 @@ impl Relation for IrSource {
             keccak_256: involves_instructions(&|op| matches!(op, I::Keccak256 { .. })),
             sha3_256: false,
             blake2b: false,
+            nb_arith_cols: 5,
             nr_pow2range_cols: 4,
             secp256k1: involves_types(&[
                 IrType::Secp256k1Point,
@@ -1894,7 +1922,7 @@ impl Relation for IrSource {
                 IrType::Secp256r1Base,
                 IrType::Secp256r1Scalar,
             ]),
-            bls12_381: involves_accumulators,
+            bls12_381: verifies_proofs,
             curve25519: involves_types(&[
                 IrType::Curve25519Point,
                 IrType::Curve25519Base,

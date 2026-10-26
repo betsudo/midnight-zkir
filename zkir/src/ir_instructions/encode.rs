@@ -81,6 +81,9 @@ pub fn encode_offcircuit(value: &IrValue) -> Vec<IrValue> {
         }
 
         IrValue::Accumulator(acc) => acc.as_public_input(),
+
+        // No encoding, see `encode_incircuit`.
+        IrValue::UnboundVk(_) => vec![],
     };
     encoded
         .into_iter()
@@ -150,6 +153,10 @@ pub fn encode_incircuit(
         CircuitValue::Accumulator(acc) => {
             check_collapsed(acc)?;
             std_lib.verifier().as_public_input(layouter, acc)
+        }
+
+        CircuitValue::UnboundVk(_) => {
+            Err(Error::Synthesis("an UnboundVk cannot be encoded".into()))
         }
     }?;
     Ok(encoded.into_iter().map(CircuitValue::Native).collect())
@@ -248,6 +255,8 @@ pub fn decode_offcircuit(encoded: &[Fr], val_t: &IrType) -> Result<IrValue, anyh
         IrType::Accumulator => {
             DeferredAccumulator::from_public_input(&encoded).map(IrValue::Accumulator)
         }
+
+        IrType::UnboundVk => None,
     }
     .ok_or_else(|| anyhow!("Failed to decode {encoded:?} as {val_t:?}"))?;
 
@@ -304,15 +313,15 @@ mod tests {
     /// A collapsed accumulator with random points on both sides, which does
     /// not satisfy the pairing invariant.
     fn random_accumulator() -> IrValue {
-        use midnight_circuits::verifier::{Accumulator, Msm, SelfEmulation};
+        use midnight_circuits::verifier::{Accumulator, Msm, Point, SelfEmulation};
         use midnight_curves::Bls12;
-        use midnight_proofs::poly::kzg::params::ParamsKZG;
+        use midnight_proofs::poly::{PolynomialLabel, kzg::params::ParamsKZG};
         use transient_crypto::proofs::InnerSelfEmulation as S;
         let side = || {
             Msm::<S>::new(
-                &[<S as SelfEmulation>::C::random(OsRng)],
+                &[Point::Variable(<S as SelfEmulation>::C::random(OsRng))],
                 &[F::ONE],
-                &Default::default(),
+                &[PolynomialLabel::NoLabel],
             )
         };
         let acc = Accumulator::new(side(), side());
