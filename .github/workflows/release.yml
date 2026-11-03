@@ -10,15 +10,12 @@ name: Publish ZKIR Release
 #   2. `unit-tests` re-runs the full suite at the released commit.
 #   3. `publish-npm` publishes the tarball to GitHub Packages and npmjs under
 #      both scopes (@midnight-ntwrk legacy, @midnightntwrk migration target).
-#      Skipped gracefully, with a warning, while the registry tokens are not
-#      configured as repo secrets.
+#      Fails if a registry token is missing or any publish fails.
 #   4. `release` creates (or refreshes) the GitHub Release with the tarball,
 #      test results, and SHA256SUMS. Versions containing -rc/-alpha/-beta are
-#      marked as pre-releases and get auto-generated notes.
-#
-# There is no crates.io job: every crate in this workspace is `publish = false`;
-# consumers pull the Rust crates via git tag + cargo `[patch]`, which is what
-# the pushed tag serves.
+#      marked as pre-releases and get auto-generated notes. The assembled
+#      assets are also uploaded as the `release-assets` artifact, so a dry run
+#      can be inspected before the real run.
 
 on:
   workflow_dispatch:
@@ -191,15 +188,18 @@ jobs:
   # trusted: it is normalized to each target scope before publishing.
   # Idempotent: already-published versions are skipped unless `force`.
   #
-  # Requires repo secrets:
+  # Requires secrets (repo- or `release` environment-scoped):
   #   MIDNIGHTCI_PACKAGES_WRITE - GH Packages write token
   #   MIDNIGHTCI_NPMJS_TOKEN    - npmjs publish token
-  # While a token is missing its registry is skipped with a warning, so tag +
-  # GitHub Release still work before npm credentials are set up.
+  # A missing token or a failed publish fails the job, which blocks the
+  # GitHub Release.
   publish-npm:
     needs: [ build, unit-tests ]
     if: ${{ github.event.inputs.dry_run != 'true' }}
     runs-on: ubuntu-latest
+    # Runs under the protected `release` environment (as midnight-ledger's
+    # publish.yml does) so environment-scoped publish secrets are available.
+    environment: release
     env:
       WASM_VERSION: ${{ needs.build.outputs.wasm_version }}
       FORCE: ${{ github.event.inputs.force }}
@@ -254,8 +254,8 @@ jobs:
           publish() { # publish <registry-url> <token> <scope>
             local reg="$1" token="$2" scope="$3" pkg="${3}/zkir-v3" host npmrc rescoped
             if [ -z "$token" ]; then
-              echo "::warning::no token configured for ${reg} - skipping ${pkg}@${WASM_VERSION}"
-              return 0
+              echo "::error::no token configured for ${reg} - cannot publish ${pkg}@${WASM_VERSION}"
+              exit 1
             fi
             # Scoped packages resolve their registry via .npmrc, not --registry,
             # so write a throwaway userconfig with the scope mapping + auth.
@@ -269,7 +269,11 @@ jobs:
               return 0
             fi
             rescoped=$(rescope "$scope")
-            NPM_CONFIG_USERCONFIG="$npmrc" npm publish "$rescoped" --access public --tag "$DIST_TAG"
+            if ! NPM_CONFIG_USERCONFIG="$npmrc" npm publish "$rescoped" --access public --tag "$DIST_TAG"; then
+              rm -f "$npmrc"
+              echo "::error::failed to publish ${pkg}@${WASM_VERSION} to ${reg}"
+              exit 1
+            fi
             rm -f "$npmrc"
             echo "published ${pkg}@${WASM_VERSION} (${DIST_TAG}) to ${reg}"
           }
@@ -322,6 +326,14 @@ jobs:
           fi
           ls -lah "$STAGING"
           echo "staging=$STAGING" >> "$GITHUB_OUTPUT"
+
+      - name: Upload assembled release assets
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: release-assets
+          path: release-assets/
+          if-no-files-found: error
 
       - name: Create or update GitHub Release
         env:
