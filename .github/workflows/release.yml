@@ -193,7 +193,7 @@ jobs:
   #
   # Requires repo secrets:
   #   MIDNIGHTCI_PACKAGES_WRITE - GH Packages write token
-  #   NPMJS_PUBLISH_TOKEN       - npmjs publish token
+  #   MIDNIGHTCI_NPMJS_TOKEN    - npmjs publish token
   # While a token is missing its registry is skipped with a warning, so tag +
   # GitHub Release still work before npm credentials are set up.
   publish-npm:
@@ -204,7 +204,7 @@ jobs:
       WASM_VERSION: ${{ needs.build.outputs.wasm_version }}
       FORCE: ${{ github.event.inputs.force }}
       GH_PACKAGES_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_WRITE }}
-      NPMJS_TOKEN: ${{ secrets.NPMJS_PUBLISH_TOKEN }}
+      NPMJS_TOKEN: ${{ secrets.MIDNIGHTCI_NPMJS_TOKEN }}
     steps:
       - name: Set up Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
@@ -244,6 +244,13 @@ jobs:
             echo "$out"
           }
 
+          # npm refuses pre-releases without --tag; use the pre-release
+          # identifier (rc, alpha, ...) as the dist-tag, like midnight-ledger.
+          DIST_TAG=latest
+          if [[ "$WASM_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-([a-zA-Z][a-zA-Z0-9_-]*) ]]; then
+            DIST_TAG="${BASH_REMATCH[1]}"
+          fi
+
           publish() { # publish <registry-url> <token> <scope>
             local reg="$1" token="$2" scope="$3" pkg="${3}/zkir-v3" host npmrc rescoped
             if [ -z "$token" ]; then
@@ -262,9 +269,9 @@ jobs:
               return 0
             fi
             rescoped=$(rescope "$scope")
-            NPM_CONFIG_USERCONFIG="$npmrc" npm publish "$rescoped" --access public
+            NPM_CONFIG_USERCONFIG="$npmrc" npm publish "$rescoped" --access public --tag "$DIST_TAG"
             rm -f "$npmrc"
-            echo "published ${pkg}@${WASM_VERSION} to ${reg}"
+            echo "published ${pkg}@${WASM_VERSION} (${DIST_TAG}) to ${reg}"
           }
 
           for SCOPE in @midnight-ntwrk @midnightntwrk; do
