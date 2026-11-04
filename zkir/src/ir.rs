@@ -181,8 +181,9 @@ tag_enforcement_test!(ProverKey<IrSource>);
 pub enum IrMinorVersion {
     V0,
     /// Adds [`IrSource::inner_vks`].
-    #[default]
     V1,
+    #[default]
+    V2,
 }
 
 impl Zkir for IrSource {
@@ -1525,16 +1526,15 @@ impl IrSource {
             serde_json::Value::Object(mut obj) => {
                 let ver = serde_json::from_value(
                     obj.get("version")
-                        .ok_or(io::Error::new(
-                            io::ErrorKind::InvalidData,
-                            "Expected a version entry",
-                        ))?
+                        .ok_or_else(|| {
+                            io::Error::new(io::ErrorKind::InvalidData, "Expected a version entry")
+                        })?
                         .clone(),
                 )?;
                 match ver {
                     SerdeVersion {
                         major: 3,
-                        minor: 0..=1,
+                        minor: 0..=2,
                     } => {
                         obj.insert(
                             "version".into(),
