@@ -11,7 +11,11 @@ name: Publish ZKIR Release
 #   3. `publish-npm` publishes the tarball to GitHub Packages and npmjs under
 #      both scopes (@midnight-ntwrk legacy, @midnightntwrk migration target).
 #      Fails if a registry token is missing or any publish fails.
-#   4. `release` creates (or refreshes) the GitHub Release with the tarball,
+#   4. `crates-io` publishes the `midnight-zkir` crate to crates.io (final
+#      releases only; pre-releases skip it). Dry runs rehearse with
+#      `--dry-run`. Runs independently of the GitHub Release, as in
+#      midnight-ledger.
+#   5. `release` creates (or refreshes) the GitHub Release with the tarball,
 #      test results, and SHA256SUMS. Versions containing -rc/-alpha/-beta are
 #      marked as pre-releases and get auto-generated notes. The assembled
 #      assets are also uploaded as the `release-assets` artifact, so a dry run
@@ -25,7 +29,7 @@ on:
         type: boolean
         default: false
       dry_run:
-        description: "Dry run: build, test and assemble artifacts but skip every irreversible action (tag push, npm publish, GitHub Release)."
+        description: "Dry run: build, test and assemble artifacts but skip every irreversible action (tag push, npm publish, crates.io publish, GitHub Release)."
         type: boolean
         default: false
 
@@ -282,6 +286,56 @@ jobs:
             publish "https://npm.pkg.github.com" "$GH_PACKAGES_TOKEN" "$SCOPE"
             publish "https://registry.npmjs.org" "$NPMJS_TOKEN"       "$SCOPE"
           done
+
+  # Publishes the workspace crates (midnight-zkir; zkir-wasm is
+  # `publish = false`) to crates.io, mirroring midnight-ledger's `crates-io`
+  # job. crates.io is immutable, so this runs only after the suite is green.
+  # Final releases only: pre-releases (version contains a '-') skip the job -
+  # they ship via cargo [patch] + git tag. Dry runs rehearse with
+  # `cargo workspaces publish --dry-run` and upload nothing.
+  #
+  # Requires secret (repo- or `release` environment-scoped):
+  #   CARGO_REGISTRY_TOKEN - crates.io API token with publish rights
+  crates-io:
+    needs: [ build, unit-tests ]
+    if: ${{ !contains(needs.build.outputs.version, '-') }}
+    runs-on: ubuntu-latest
+    # Same gate as `build`: real publishes run under the protected `release`
+    # environment (for environment-scoped secrets); dry runs need no approval.
+    environment: ${{ github.event.inputs.dry_run != 'true' && 'release' || '' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+          extra_nix_config: |
+            extra-trusted-public-keys = hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=
+            extra-substituters = https://cache.iog.io file://${{ runner.temp }}/nix-binary-cache
+            accept-flake-config = true
+
+      - name: Restore and save Nix store
+        uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7.0.2
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          purge: true
+          purge-prefixes: nix-${{ runner.os }}-
+          purge-created: 0
+
+      - name: Configure cargo
+        run: .github/scripts/configure-cargo.sh
+
+      - name: Publish crates to crates.io
+        env:
+          # Dry runs never publish; give them no credentials at all.
+          CARGO_REGISTRY_TOKEN: ${{ github.event.inputs.dry_run != 'true' && secrets.CARGO_REGISTRY_TOKEN || '' }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: nix develop -c .github/scripts/cargo-publish-crates.sh "$VERSION"
 
   release:
     # publish-npm is skipped on dry runs; `!cancelled() &&` (a status function,
