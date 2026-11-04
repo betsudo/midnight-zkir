@@ -75,8 +75,7 @@ This release note is important for:
   ZKIR v2 from v3.
 - The WASM bindings are published to npm as `@midnightntwrk/zkir-v3` and
   `@midnight-ntwrk/zkir-v3`. The JavaScript/TypeScript API (`zkir.d.ts`) is
-  unchanged from 3.0.0-rc.1. Its reference docs are now generated under
-  `docs/api/zkir`.
+  unchanged from 3.0.0-rc.1.
 - Releases are cut with the new Prepare and Publish ZKIR Release workflows
   (see `RELEASES.md`). Pre-releases are published under a matching npm
   dist-tag.

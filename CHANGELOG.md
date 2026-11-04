@@ -68,8 +68,7 @@ and `3.2.0-rc.2`.
 - The WASM bindings are published to npm as `@midnightntwrk/zkir-v3` and
   `@midnight-ntwrk/zkir-v3`. The JavaScript API is unchanged from
   3.0.0-rc.1.
-- Add Prepare/Publish release workflows: npm dist-tags for pre-releases,
-  crates.io publishing for final releases, and generated markdown API docs
-  under `docs/api/zkir`.
+- Add Prepare/Publish release workflows: npm dist-tags for pre-releases and
+  crates.io publishing for final releases.
 - Add the ZKIR v3 language specification and Agda mechanization under
   `zkir-spec`.
