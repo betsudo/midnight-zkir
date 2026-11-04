@@ -253,7 +253,32 @@
             hardeningDisable = ["zerocallusedregs" "stackprotector"];
 
             MIDNIGHT_PP = "${packages.public-params}";
-            MIDNIGHT_LEDGER_TEST_STATIC_DIR = "${packages.test-artifacts}";
+            # MIDNIGHT_LEDGER_TEST_STATIC_DIR is deliberately not set here:
+            # nothing in this workspace reads it, and referencing
+            # test-artifacts would make every `nix develop` (including each
+            # CI job) do a full nix build of zkir and compile every
+            # precompile's keys first. Use `nix build .#test-artifacts`.
+          };
+
+          # Runs tests from a `cargo nextest archive` built in the default
+          # shell (CI test shards). The archive bundles libstd, so no Rust
+          # toolchain is needed; the same stdenv provides the glibc the test
+          # binaries were linked against, and public-params is the path their
+          # MIDNIGHT_PP was compiled with.
+          devShells.test-runner = mkShell {
+            packages = [pkgs.cargo-nextest];
+            buildInputs = [packages.public-params];
+          };
+
+          # Just enough to run (and fix) `cargo audit` in CI, without pulling
+          # in the full dev toolchain. rustc is needed because the v3 resolver
+          # consults it when `cargo audit fix` re-resolves the lockfile.
+          devShells.audit = pkgs.mkShell {
+            packages = [
+              (rust.combine [rust.stable.cargo rust.stable.rustc])
+              pkgs.cargo-audit
+              pkgs.jq
+            ];
           };
         }
     );
