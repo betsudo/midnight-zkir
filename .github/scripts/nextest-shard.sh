@@ -79,8 +79,10 @@ from_archive=(--archive-file "$ARCHIVE" --workspace-remap . --extract-to target/
 mkdir -p target/nextest-archive
 
 # Every named test must exist, or it would silently stop running anywhere.
+# --color never: CI sets CARGO_TERM_COLOR=always, which nextest honours even
+# when piped, and the escape codes would stop the names from matching.
 listed="$("${nextest[@]}" list "${from_archive[@]}" -E "$(filterset "${all_slow[@]}")" \
-  --message-format oneline | awk '{print $2}' | sort -u)"
+  --color never --message-format oneline | awk '{print $2}' | sort -u)"
 missing="$(comm -23 <(printf '%s\n' "${all_slow[@]}" | sort -u) <(printf '%s\n' "$listed"))"
 if [ -n "$missing" ]; then
   echo "::error::Tests named in .github/scripts/nextest-shard.sh no longer exist: $(echo "$missing" | tr '\n' ' ')- update the shard lists."
