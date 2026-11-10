@@ -55,6 +55,7 @@ pub const MAX_BYTES_LEN: u32 = 1 << 24;
 /// The binary encoding is also written by hand, to keep the ZKIR 3.0 layout
 /// (see [`IrType::discriminant`]).
 #[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(test, derive(strum::EnumIter))]
 pub enum IrType {
     /// Element of the BLS12-381 scalar field, a.k.a. the native field.
     /// This is also the base field of Jubjub.
@@ -671,25 +672,11 @@ mod tests {
 
     #[test]
     fn point_type_relations() {
-        use IrType::*;
-        let all = [
-            Native,
-            Bool,
-            Byte,
-            Bytes(32),
-            JubjubPoint,
-            JubjubScalar,
-            Secp256k1Point,
-            Secp256k1Base,
-            Secp256k1Scalar,
-            Secp256r1Point,
-            Secp256r1Base,
-            Secp256r1Scalar,
-            Curve25519Point,
-            Curve25519Base,
-            Curve25519Scalar,
-        ];
-        for t in all {
+        use strum::IntoEnumIterator;
+
+        // Iterating over all variants keeps this test exhaustive as new types
+        // are added.
+        for t in IrType::iter() {
             assert_eq!(t.base_of_point().is_ok(), t.is_point());
             if let Ok(b) = t.base_of_point() {
                 assert_eq!(b.point_of_base().ok(), Some(t.clone()));
