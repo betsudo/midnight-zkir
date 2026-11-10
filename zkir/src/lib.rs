@@ -18,6 +18,7 @@ pub mod ir;
 pub mod ir_instructions;
 pub mod ir_types;
 pub mod ir_vm;
+mod type_inference;
 
 pub use ir::{Identifier, Instruction, IrSource};
 pub use ir_vm::Preprocessed;

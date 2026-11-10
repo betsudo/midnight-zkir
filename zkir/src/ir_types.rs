@@ -55,6 +55,7 @@ pub const MAX_BYTES_LEN: u32 = 1 << 24;
 /// The binary encoding is also written by hand, to keep the ZKIR 3.0 layout
 /// (see [`IrType::discriminant`]).
 #[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(test, derive(strum::EnumIter))]
 pub enum IrType {
     /// Element of the BLS12-381 scalar field, a.k.a. the native field.
     /// This is also the base field of Jubjub.
@@ -143,6 +144,56 @@ impl IrType {
                 | IrType::Secp256r1Point
                 | IrType::Curve25519Point
         )
+    }
+
+    /// The number of bytes of a `Byte` or `Bytes(n)` type.
+    pub(crate) fn byte_len(&self) -> Result<u32, anyhow::Error> {
+        match self {
+            IrType::Byte => Ok(1),
+            IrType::Bytes(n) => Ok(*n),
+            t => Err(anyhow::anyhow!("{t:?} is not a byte type")),
+        }
+    }
+
+    /// The point type whose scalar field is `self`.
+    pub(crate) fn point_of_scalar(&self) -> Result<IrType, anyhow::Error> {
+        match self {
+            IrType::JubjubScalar => Ok(IrType::JubjubPoint),
+            IrType::Secp256k1Scalar => Ok(IrType::Secp256k1Point),
+            IrType::Secp256r1Scalar => Ok(IrType::Secp256r1Point),
+            IrType::Curve25519Scalar => Ok(IrType::Curve25519Point),
+            _ => Err(anyhow::anyhow!(
+                "{self:?} is not the scalar field of a supported curve"
+            )),
+        }
+    }
+
+    /// The type of the affine coordinates of point type `self`.
+    /// Jubjub coordinates are `Native`, as its base field is the native field.
+    pub(crate) fn base_of_point(&self) -> Result<IrType, anyhow::Error> {
+        match self {
+            IrType::JubjubPoint => Ok(IrType::Native),
+            IrType::Secp256k1Point => Ok(IrType::Secp256k1Base),
+            IrType::Secp256r1Point => Ok(IrType::Secp256r1Base),
+            IrType::Curve25519Point => Ok(IrType::Curve25519Base),
+            _ => Err(anyhow::anyhow!(
+                "{self:?} is not a supported curve point type"
+            )),
+        }
+    }
+
+    /// The point type whose affine coordinates have type `self`.
+    /// This is the inverse of [`IrType::base_of_point`].
+    pub(crate) fn point_of_base(&self) -> Result<IrType, anyhow::Error> {
+        match self {
+            IrType::Native => Ok(IrType::JubjubPoint),
+            IrType::Secp256k1Base => Ok(IrType::Secp256k1Point),
+            IrType::Secp256r1Base => Ok(IrType::Secp256r1Point),
+            IrType::Curve25519Base => Ok(IrType::Curve25519Point),
+            _ => Err(anyhow::anyhow!(
+                "{self:?} is not the base field of a supported curve"
+            )),
+        }
     }
 
     /// Canonical string representation used in the serde (JSON) encoding.
@@ -618,6 +669,26 @@ impl_enum_from_try_from!(CircuitValue, Error, Error::Synthesis;
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn point_type_relations() {
+        use strum::IntoEnumIterator;
+
+        // Iterating over all variants keeps this test exhaustive as new types
+        // are added.
+        for t in IrType::iter() {
+            assert_eq!(t.base_of_point().is_ok(), t.is_point());
+            if let Ok(b) = t.base_of_point() {
+                assert_eq!(b.point_of_base().ok(), Some(t.clone()));
+            }
+            if let Ok(p) = t.point_of_base() {
+                assert_eq!(p.base_of_point().ok(), Some(t.clone()));
+            }
+            if let Ok(p) = t.point_of_scalar() {
+                assert!(p.is_point());
+            }
+        }
+    }
 
     #[test]
     fn bytes_type_serde_roundtrip() {
