@@ -1621,13 +1621,14 @@ impl Relation for IrSource {
                 .any(|id| target_types.contains(&id.val_t));
 
             // We can figure out if a type is used in the circuit by looking at the entry
-            // points, currently: PublicInput, PrivateInput, FromBytes or
-            // FromBytes32.
+            // points, currently: PublicInput, PrivateInput, FromBytes, FromBytes32 or
+            // LoadConstant.
             let types_in_instructions = self.instructions.iter().any(|op| match op {
                 I::PublicInput { val_t, .. }
                 | I::PrivateInput { val_t, .. }
                 | I::FromBytes { val_t, .. }
-                | I::FromBytes32 { val_t, .. } => target_types.contains(val_t),
+                | I::FromBytes32 { val_t, .. }
+                | I::LoadConstant { val_t, .. } => target_types.contains(val_t),
                 _ => false,
             });
 
@@ -1640,7 +1641,9 @@ impl Relation for IrSource {
 
         ZkStdLibArch {
             jubjub: involves_types(&[IrType::JubjubPoint, IrType::JubjubScalar])
-                || involves_instructions(&|op| matches!(op, I::HashToCurve { .. })),
+                || involves_instructions(&|op| {
+                    matches!(op, I::HashToCurve { .. } | I::JubjubScalarFromNative { .. })
+                }),
             poseidon: self.do_communications_commitment
                 || involves_instructions(&|op| {
                     matches!(op, I::TransientHash { .. } | I::HashToCurve { .. })
