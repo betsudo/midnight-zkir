@@ -888,6 +888,19 @@ impl IrSource {
                 bail!("Communications commitment mismatch");
             }
         }
+        // The types pass must agree with the types of the values computed here.
+        if cfg!(debug_assertions) {
+            let (types, _) = self
+                .types_pass()
+                .expect("types pass failed on a valid circuit");
+            for (id, value) in memory.iter() {
+                assert_eq!(
+                    types.get(id),
+                    Some(&value.get_type()),
+                    "types pass disagrees with preprocess on {id:?}"
+                );
+            }
+        }
         Ok(Preprocessed {
             memory,
             pis: pis.into_iter().map(|x| x.0).collect(),
