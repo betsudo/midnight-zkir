@@ -20,6 +20,7 @@ pub mod ir_types;
 pub mod ir_vm;
 #[cfg(feature = "test-utilities")]
 pub mod testing;
+mod type_inference;
 
 pub use ir::{Identifier, Instruction, IrSource};
 pub use ir_vm::Preprocessed;

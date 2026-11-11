@@ -1891,7 +1891,7 @@ dependencies = [
 
 [[package]]
 name = "midnight-zkir"
-version = "3.2.0-rc.2"
+version = "3.2.0"
 dependencies = [
  "actix-rt",
  "anyhow",
@@ -1925,6 +1925,7 @@ dependencies = [
  "serde_repr",
  "sha2 0.11.0",
  "sha3",
+ "strum",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -1932,7 +1933,7 @@ dependencies = [
 
 [[package]]
 name = "midnight-zkir-wasm"
-version = "3.2.0-rc.2"
+version = "3.2.0"
 dependencies = [
  "getrandom 0.2.17",
  "getrandom 0.3.4",
@@ -3030,6 +3031,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 
 [[package]]
+name = "strum"
+version = "0.27.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af23d6f6c1a224baef9d3f61e287d2761385a5b88fdab4eb4c6f11aeb54c4bcf"
+dependencies = [
+ "strum_macros",
+]
+
+[[package]]
+name = "strum_macros"
+version = "0.27.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7695ce3845ea4b33927c055a39dc438a45b059f7c1b3d91d38d10355fb8cbca7"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
+
+[[package]]
 name = "subtle"
 version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3105,7 +3127,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "once_cell",
  "rustix",
  "windows-sys 0.61.2",

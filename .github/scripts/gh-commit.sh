@@ -27,11 +27,13 @@
 # Honors DRY_RUN=true: logs the file changes and makes no commit.
 #
 # Args: $1  branch          $2  commit message headline
+#       $3  optional commit message body (e.g. a Signed-off-by trailer)
 # Env:  GH_TOKEN/GITHUB_TOKEN (contents:write), GITHUB_REPOSITORY
 set -euo pipefail
 
 BRANCH="$1"
 MESSAGE="$2"
+BODY="${3:-}"
 
 # expectedHeadOid = the current remote tip, so sequential commits in one job
 # chain correctly (each lands on the previous one's result, not a stale local).
@@ -74,11 +76,11 @@ QUERY='mutation($input: CreateCommitOnBranchInput!) {
 # --slurpfile reads each temp file's JSON-lines into an array (empty file -> []).
 jq -n \
     --arg repo "$GITHUB_REPOSITORY" --arg branch "$BRANCH" --arg msg "$MESSAGE" \
-    --arg oid "$EXPECTED_OID" --arg query "$QUERY" \
+    --arg body "$BODY" --arg oid "$EXPECTED_OID" --arg query "$QUERY" \
     --slurpfile adds "$adds_file" --slurpfile dels "$dels_file" \
     '{query:$query, variables:{input:{
         branch:{repositoryNameWithOwner:$repo, branchName:$branch},
-        message:{headline:$msg},
+        message:({headline:$msg} + (if $body == "" then {} else {body:$body} end)),
         expectedHeadOid:$oid,
         fileChanges:{additions:$adds, deletions:$dels}}}}' > "$body_file"
 

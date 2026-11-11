@@ -991,6 +991,19 @@ impl IrSource {
         // Accumulator PIs first, ZKIR's own PIs after.
         let out_pis: Vec<outer::Scalar> = acc_pis.into_iter().chain(pis).map(|x| x.0).collect();
 
+        // The types pass must agree with the types of the values computed here.
+        if cfg!(debug_assertions) {
+            let (types, _) = self
+                .types_pass()
+                .expect("types pass failed on a valid circuit");
+            for (id, value) in memory.iter() {
+                assert_eq!(
+                    types.get(id),
+                    Some(&value.get_type()),
+                    "types pass disagrees with preprocess on {id:?}"
+                );
+            }
+        }
         Ok(Preprocessed {
             memory,
             pis: out_pis,
@@ -1831,73 +1844,17 @@ impl Relation for IrSource {
     }
 
     fn used_chips(&self) -> ZkStdLibArch {
-        let involves_types = |target_types: &[IrType]| -> bool {
-            let types_in_inputs = self
-                .inputs
-                .iter()
-                .any(|id| target_types.contains(&id.val_t));
-
-            // We can figure out if a type is used in the circuit by looking at the entry
-            // points, currently: PublicInput, PrivateInput, FromBytes or
-            // FromBytes32.
-            let types_in_instructions = self.instructions.iter().any(|op| match op {
-                I::PublicInput { val_t, .. }
-                | I::PrivateInput { val_t, .. }
-                | I::FromBytes { val_t, .. }
-                | I::FromBytes32 { val_t, .. } => target_types.contains(val_t),
-                _ => false,
-            });
-
-            types_in_inputs || types_in_instructions
-        };
-
-        let involves_instructions = |match_predicate: &dyn Fn(&I) -> bool| -> bool {
-            self.instructions.iter().any(match_predicate)
-        };
-
-        let involves_accumulators = involves_types(&[IrType::Accumulator])
-            || involves_instructions(&|op| {
-                matches!(
-                    op,
-                    I::PrepareVerification { .. }
-                        | I::Accumulate { .. }
-                        | I::VerifyAccumulator { .. }
-                )
-            });
-
-        ZkStdLibArch {
-            jubjub: involves_types(&[IrType::JubjubPoint, IrType::JubjubScalar])
-                || involves_instructions(&|op| matches!(op, I::HashToCurve { .. })),
-            poseidon: self.do_communications_commitment
-                || involves_accumulators
-                || involves_instructions(&|op| {
-                    matches!(op, I::TransientHash { .. } | I::HashToCurve { .. })
-                }),
-            sha2_256: involves_instructions(&|op| matches!(op, I::PersistentHash { .. })),
-            sha2_512: involves_instructions(&|op| matches!(op, I::Sha512 { .. })),
-            keccak_256: involves_instructions(&|op| matches!(op, I::Keccak256 { .. })),
-            sha3_256: false,
-            blake2b: false,
-            nr_pow2range_cols: 4,
-            secp256k1: involves_types(&[
-                IrType::Secp256k1Point,
-                IrType::Secp256k1Base,
-                IrType::Secp256k1Scalar,
-            ]),
-            p256: involves_types(&[
-                IrType::Secp256r1Point,
-                IrType::Secp256r1Base,
-                IrType::Secp256r1Scalar,
-            ]),
-            bls12_381: involves_accumulators,
-            curve25519: involves_types(&[
-                IrType::Curve25519Point,
-                IrType::Curve25519Base,
-                IrType::Curve25519Scalar,
-            ]),
-            base64: false,
-            automaton: false,
-        }
+        // An ill-typed circuit cannot be synthesized anyway (`circuit` fails),
+        // so the architecture we return in that case is irrelevant.
+        self.types_pass()
+            .map(|(_, arch)| arch)
+            .unwrap_or_else(|err| {
+                error!("Ill-typed circuit: {err}");
+                ZkStdLibArch {
+                    nr_pow2range_cols: 4,
+                    ..ZkStdLibArch::default()
+                }
+            })
     }
 
     fn write_relation<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
