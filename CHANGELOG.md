@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## ZKIR 3.2.1
+
 ## ZKIR 3.2.0
 
 First final (non-pre-release) ZKIR 3.x release. It covers everything since
