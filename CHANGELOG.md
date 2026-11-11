@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+## ZKIR 3.2.1
+
+### Fixes
+
+- fix: `used_chips` derives the chip architecture from a new types pass
+  (`types_pass`) that infers the type of every variable in the circuit.
+  Previously only the circuit inputs and the `PublicInput`, `PrivateInput`,
+  `FromBytes` and `FromBytes32` instructions were inspected, so a type
+  introduced only by another instruction (for example a `LoadConstant` of a
+  foreign-field constant, an `EcMulGenerator` output, or
+  `JubjubScalarFromNative`) did not enable the chip it needs, and key
+  generation and proving failed for such circuits. Circuits that worked
+  before select the same architecture, so their keys are unchanged.
+
+### Internal
+
+- In debug builds, `preprocess` cross-checks the types pass against the
+  types of the actually computed values.
+
 ## ZKIR 3.2.0
 
 First final (non-pre-release) ZKIR 3.x release. It covers everything since
