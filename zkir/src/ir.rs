@@ -596,6 +596,7 @@ pub enum Instruction {
     ///  - Curve25519Point
     ///  - Curve25519Base
     ///  - Curve25519Scalar
+    ///  - Accumulator, consuming both: the one not selected is never verified
     ///
     /// Outputs one element, identical to `a` or `b`
     CondSelect {

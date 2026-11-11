@@ -11,13 +11,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use midnight_circuits::instructions::ControlFlowInstructions;
-use midnight_circuits::types::AssignedBit;
+use midnight_circuits::instructions::{
+    AssertionInstructions, ControlFlowInstructions, PublicInputInstructions,
+};
+use midnight_circuits::types::{AssignedBit, InnerValue};
+use midnight_circuits::verifier::AssignedAccumulator;
 use midnight_proofs::{circuit::Layouter, plonk};
 use midnight_zk_stdlib::ZkStdLib;
+use transient_crypto::proofs::InnerSelfEmulation as S;
 
 use crate::{
-    ir_instructions::F,
+    ir_instructions::{F, accumulate::check_collapsed},
     ir_types::{CircuitValue, IrValue},
 };
 
@@ -39,6 +43,7 @@ use crate::{
 ///   - `Curve25519Point`
 ///   - `Curve25519Base`
 ///   - `Curve25519Scalar`
+///   - `Accumulator`
 ///
 /// # Errors
 ///
@@ -72,6 +77,7 @@ pub fn select_offcircuit(bit: bool, a: &IrValue, b: &IrValue) -> Result<IrValue,
 ///   - `Curve25519Point`
 ///   - `Curve25519Base`
 ///   - `Curve25519Scalar`
+///   - `Accumulator`
 ///
 /// # Errors
 ///
@@ -125,12 +131,42 @@ pub fn select_incircuit(
             (std_lib.curve25519().scalar_field_chip()).select(layouter, bit, s, r)?,
         )),
 
+        (Accumulator(a), Accumulator(b)) => Ok(Accumulator(select_accumulator(
+            std_lib, layouter, bit, a, b,
+        )?)),
+
         _ => Err(plonk::Error::Synthesis(format!(
             "Unsupported cond_select: {:?} ? {:?}",
             a.get_type(),
             b.get_type()
         ))),
     }
+}
+
+/// midnight-circuits has no select on accumulators, so the selected one is
+/// witnessed and its encoding pinned to the selection of the inputs' encodings.
+fn select_accumulator(
+    std_lib: &ZkStdLib,
+    layouter: &mut impl Layouter<F>,
+    bit: &AssignedBit<F>,
+    a: &AssignedAccumulator<S>,
+    b: &AssignedAccumulator<S>,
+) -> Result<AssignedAccumulator<S>, plonk::Error> {
+    check_collapsed(a)?;
+    check_collapsed(b)?;
+    let verifier = std_lib.verifier();
+    let value =
+        (bit.value().zip(a.value()).zip(b.value())).map(|((bit, a), b)| if bit { a } else { b });
+    let selected = verifier.assign_collapsed_accumulator(layouter, &[], value)?;
+
+    let a_pi = verifier.as_public_input(layouter, a)?;
+    let b_pi = verifier.as_public_input(layouter, b)?;
+    let selected_pi = verifier.as_public_input(layouter, &selected)?;
+    for ((x, y), z) in a_pi.iter().zip(&b_pi).zip(&selected_pi) {
+        let expected = std_lib.select(layouter, bit, x, y)?;
+        std_lib.assert_equal(layouter, z, &expected)?;
+    }
+    Ok(selected)
 }
 
 #[cfg(test)]

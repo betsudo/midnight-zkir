@@ -435,6 +435,27 @@ fn every_accumulator_is_verified_exactly_once() {
     );
 }
 
+/// `cond_select` on accumulators consumes both, and its output must be
+/// verified in turn.
+#[test]
+fn cond_select_consumes_both_accumulators() {
+    let two = r#"{ "op": "private_input", "guard": "0x00", "type": "Accumulator", "output": "%x" },
+        { "op": "private_input", "guard": "0x00", "type": "Accumulator", "output": "%y" },
+        { "op": "cond_select", "bit": "0x01", "a": "%x", "b": "%y", "output": "%s" }"#;
+
+    let verified = format!(r#"{two},{{ "op": "verify_accumulator", "input": "%s" }}"#);
+    ir(&verified)
+        .check(&preimage(0))
+        .expect("both consumed, the selection verified");
+
+    let err = expect_check_err(&ir(two), preimage(0));
+    assert!(err.contains("never verified"), "got: {err}");
+
+    let reused = format!(r#"{verified},{{ "op": "verify_accumulator", "input": "%x" }}"#);
+    let err = expect_check_err(&ir(&reused), preimage(0));
+    assert!(err.contains("not an unconsumed accumulator"), "got: {err}");
+}
+
 /// The accumulator instructions round-trip through JSON and binary.
 #[test]
 fn accumulator_text_format_roundtrips() {

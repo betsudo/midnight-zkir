@@ -3727,6 +3727,77 @@ mod proof_tests {
             .unwrap();
     }
 
+    #[actix_rt::test]
+    async fn test_cond_select_accumulator_proof() {
+        // Selects between a witnessed accumulator, which does not pair, and the
+        // trivial one: the proof carries whichever is selected.
+        use std::collections::BTreeMap;
+
+        use group::{Group, ff::Field};
+        use midnight_circuits::verifier::{Accumulator, Msm, SelfEmulation};
+        use midnight_zkir::ir_instructions::accumulate::trivial_accumulator;
+        use transient_crypto::curve::{Fr, outer};
+        use transient_crypto::proofs::{DeferredAccumulator, InnerSelfEmulation as S};
+
+        let g = <S as SelfEmulation>::C::generator();
+        let side = |p| Msm::<S>::new(&[p], &[outer::Scalar::ONE], &BTreeMap::new());
+        let witnessed =
+            DeferredAccumulator::new(&Accumulator::new(side(g), side(g.double()))).unwrap();
+
+        let ir_raw = r#"{
+           "version": { "major": 3, "minor": 1 },
+           "inputs": [],
+           "outputs": [],
+           "do_communications_commitment": false,
+           "instructions": [
+               { "op": "private_input", "guard": null, "type": "Scalar<BLS12-381>", "output": "%b" },
+               { "op": "private_input", "guard": null, "type": "Accumulator", "output": "%x" },
+               { "op": "private_input", "guard": "0x00", "type": "Accumulator", "output": "%t" },
+               { "op": "cond_select", "bit": "%b", "a": "%x", "b": "%t", "output": "%s" },
+               { "op": "verify_accumulator", "input": "%s" }
+           ]
+        }"#;
+        let ir = IrSource::load(ir_raw.as_bytes()).unwrap();
+        let (pk, vk) = ir.keygen(&TestParams).await.unwrap();
+
+        let prove = |bit: u64| {
+            let preimage = ProofPreimage {
+                inner_proofs: vec![],
+                binding_input: 42.into(),
+                communications_commitment: None,
+                inputs: vec![],
+                private_transcript: std::iter::once(bit.into())
+                    .chain(witnessed.as_public_input().into_iter().map(Fr))
+                    .collect(),
+                public_transcript_inputs: vec![],
+                public_transcript_outputs: vec![],
+                key_location: KeyLocation(Cow::Borrowed("builtin")),
+            };
+            let resolver = TestResolver {
+                pk: pk.clone(),
+                vk: vk.clone(),
+                ir: ir.clone(),
+            };
+            async move {
+                preimage
+                    .prove::<IrSource>(
+                        &mut ChaCha20Rng::from_seed([42; 32]),
+                        &TestParams,
+                        &resolver,
+                    )
+                    .await
+            }
+        };
+
+        let (proof, _) = prove(0).await.unwrap();
+        assert_eq!(proof.accumulators, vec![trivial_accumulator()]);
+
+        // `prove` verifies what it made, and only the pairing rejects it: the
+        // circuit selected the accumulator that was carried.
+        let err = prove(1).await.unwrap_err();
+        assert!(format!("{err:#}").contains("pairing"), "got: {err:#}");
+    }
+
     #[test]
     fn test_constant_bad_encoding_rejected() {
         // A Native constant needs exactly one field element; two is invalid and

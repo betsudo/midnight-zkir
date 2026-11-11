@@ -79,8 +79,8 @@ pub fn accumulate_incircuit(
     Ok(acc)
 }
 
-/// Tracks that each accumulator is consumed exactly once, by `accumulate` or
-/// `verify_accumulator`: a dropped one is an unchecked proof.
+/// Tracks that each accumulator is consumed exactly once, by `accumulate`,
+/// `cond_select` or `verify_accumulator`: a dropped one is an unchecked proof.
 #[derive(Default)]
 struct AccumulatorUses<'a> {
     produced: HashSet<&'a Identifier>,
@@ -96,6 +96,11 @@ impl<'a> AccumulatorUses<'a> {
         }
         self.pending.push(id);
         Ok(())
+    }
+
+    /// Whether `op` names an accumulator, consumed or not.
+    fn is_accumulator(&self, op: &Operand) -> bool {
+        matches!(op, Operand::Variable(id) if self.produced.contains(id))
     }
 
     /// Records the single use of an accumulator.
@@ -177,6 +182,15 @@ impl IrSource {
                     inputs.iter().try_for_each(|op| accs.consume(op))?
                 }
                 I::VerifyAccumulator { input } => accs.consume(input)?,
+                // Selecting consumes both: the one not selected is never
+                // verified, as with a guarded-off `prepare_verification`.
+                I::CondSelect { a, b, output, .. }
+                    if accs.is_accumulator(a) || accs.is_accumulator(b) =>
+                {
+                    accs.consume(a)?;
+                    accs.consume(b)?;
+                    accs.produce(output)?;
+                }
                 _ => {}
             }
             if let Some(output) = ins.accumulator_output() {

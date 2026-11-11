@@ -9,6 +9,8 @@
   `verify_accumulator` instructions (ZKIR 4). `prepare_verification`  outputs an
   accumulator, which must reach exactly one `verify_accumulator` (possibly
   through `accumulate`).
+- `cond_select` supports `Accumulator`s. It consumes both, so the one not
+  selected is never verified.
 - Add `checkInnerProof` to the WASM bindings, which verifies an inner proof
   off-circuit, pairing included.
 
