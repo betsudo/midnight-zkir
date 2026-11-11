@@ -16,9 +16,12 @@
 //! directly on the verifier-gadget primitives that midnight-circuits exposes.
 //! The accumulator is only checked once a `verify_accumulator` exposes it; the
 //! verifier side (reconstructing each accumulator from the public inputs and
-//! running its pairing check) lives in `transient-crypto`.
+//! running its pairing check) lives in `transient-crypto`. [`verify_inner_proof`]
+//! runs that same pairing check here too, against the embedded Midnight SRS
+//! point, for a standalone verdict.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
+use std::sync::LazyLock;
 
 use anyhow::{anyhow, bail};
 use group::Group;
@@ -30,7 +33,7 @@ use midnight_curves::Bls12;
 use midnight_proofs::{
     circuit::{Layouter, Value},
     plonk::{self, Error},
-    poly::kzg::KZGCommitmentScheme,
+    poly::kzg::{KZGCommitmentScheme, params::ParamsVerifierKZG},
     transcript::{CircuitTranscript, Transcript},
     utils::SerdeFormat,
 };
@@ -143,6 +146,43 @@ pub fn prepare_verification_incircuit(
     Ok(acc)
 }
 
+/// `s_g2` of the Midnight SRS.
+///
+/// Only used off-circuit, by [`verify_inner_proof`]. Soundness does not rely on
+/// this point being valid with respect to the original SRS.
+const SRS_S_G2: &str = concat!(
+    // x1, x0, y1, y0, as the raw encoding orders them.
+    "04bbe1a24fcc4f988c6ef268d0c1160eac0a0c4f53d80bd74f3d2e4667be27408625a83825354e27c70859883102eb43",
+    "07acb569b3187c0fd1993980aa52a6e9e2080b9697fab96abd5c5f1c3b988256f2d99366f1bbccf13cf0e20702fee18c",
+    "0f08179604abe8c1820bbed11127408dcb5072adcab85774a32d518b682350b06a22a87bf17887732a0af45ddfccbff8",
+    "10e1b221e2a5911d6f9683a36f4e7fe7d44281de86a186cc106c3336f58fece01e766dc4147d38e31936105a4944cb59",
+);
+
+static SRS_VERIFIER: LazyLock<ParamsVerifierKZG<Bls12>> = LazyLock::new(|| {
+    let s_g2 = const_hex::decode(SRS_S_G2).expect("`SRS_S_G2` is hex");
+    ParamsVerifierKZG::read(&mut &s_g2[..], SerdeFormat::RawBytesUnchecked)
+        .expect("`SRS_S_G2` is a raw-encoded G2 point")
+});
+
+/// Verifies an inner proof off-circuit, pairing included.
+///
+/// Only the proof's own accumulator is checked; one carried in its instance is
+/// left to the outer circuit.
+pub fn verify_inner_proof(
+    vk_blob: &[u8],
+    instance: &[outer::Scalar],
+    proof: &[u8],
+) -> anyhow::Result<()> {
+    // Guard `true`: there is no instruction here to guard off, only a caller
+    // asking whether this proof holds.
+    let acc = prepare_verification_offcircuit(vk_blob, instance, proof, true)?;
+
+    if !acc.to_accumulator().check(&SRS_VERIFIER, &BTreeMap::new()) {
+        bail!("the inner proof does not hold for this verifying key and instance");
+    }
+    Ok(())
+}
+
 /// Tracks that each `inner_proof` binding is used by exactly one
 /// `prepare_verification`, under the same guard.
 ///
@@ -250,5 +290,39 @@ impl IrSource {
             );
         }
         Ok(vk_map)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs::File;
+    use std::io::BufReader;
+
+    use midnight_curves::G2Projective;
+    use transient_crypto::proofs::ParamsProver;
+
+    use super::*;
+
+    /// Pins [`SRS_S_G2`] to the SRS the ledger verifies against, and pins the
+    /// assumption that lets one point stand for the whole of it.
+    #[test]
+    fn embedded_s_g2_matches_the_midnight_srs() {
+        // Skips rather than fails to build without the SRS cache;
+        // `inner_proof_artifacts.rs` pins `SRS_VERIFIER` without it.
+        let Some(dir) = option_env!("MIDNIGHT_PP") else {
+            eprintln!("MIDNIGHT_PP is unset: skipping the SRS comparison");
+            return;
+        };
+        let params = ParamsProver::read(BufReader::new(
+            File::open(format!("{dir}/bls_midnight_2p14")).expect("the Midnight SRS cache"),
+        ))
+        .expect("the SRS parses");
+
+        assert_eq!(
+            params.0.g2(),
+            G2Projective::generator(),
+            "`ParamsVerifierKZG::read` derives its negated generator rather than reading `g2`"
+        );
+        assert_eq!(params.0.verifier_params().s_g2(), SRS_VERIFIER.s_g2());
     }
 }
