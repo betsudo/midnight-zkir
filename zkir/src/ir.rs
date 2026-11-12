@@ -62,7 +62,7 @@ impl IrSource {
         context: Option<&ProverContext>,
     ) -> Result<(Proof, Vec<Fr>, Vec<Option<usize>>), ProvingError> {
         let pk = match context {
-            Some(context) => pk.init_with_policy(&context.config)?,
+            Some(context) => pk.init_with_context(context)?,
             None => pk.init()?,
         };
         let params_k = params.get_params(pk.k()).await?;
