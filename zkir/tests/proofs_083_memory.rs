@@ -24,9 +24,14 @@ use midnight_zkir::IrSource;
 use rand::SeedableRng;
 use rand_chacha::ChaCha20Rng;
 use serialize::tagged_serialize;
-use transient_crypto::proofs::{
-    CompanionCache, KeyLocation, MappedParams, ParamsProver, ParamsProverProvider, ParamsVerifier,
-    ProofPreimage, ProverKey, ProvingKeyMaterial, Resolver, TrustedParamsDir, VerifierKey, Zkir,
+use transient_crypto::{
+    curve::Fr,
+    hash::transient_commit,
+    proofs::{
+        CompanionCache, KeyLocation, MappedParams, ParamsProver, ParamsProverProvider,
+        ParamsVerifier, ProofPreimage, ProverKey, ProvingKeyMaterial, Resolver, TrustedParamsDir,
+        VerifierKey, Zkir,
+    },
 };
 
 struct HeapParams(ParamsProver);
@@ -79,7 +84,51 @@ async fn generated_srs_proves_with_heap_and_mapped_spill_paths() {
         }"#[..],
     )
     .expect("load v3 IR");
+    exercise_proof_paths(ir, vec![1.into()], None, vec![], (4, 3)).await;
+}
+
+#[actix_rt::test]
+async fn compact_generated_ledger9_counter_proves_with_mapped_spill() {
+    // Compact 0.36.1 (7fa3a117c) emitted this v3.1 IR from the adjacent
+    // counter.compact source. It exercises Ledger9 impact and communications
+    // commitment, which the minimal test does not.
+    let ir = IrSource::load(include_str!("compact-v3-counter/increment.zkir").as_bytes())
+        .expect("load Compact-generated v3 IR");
+    let opening: Fr = 7.into();
+    let commitment = transient_commit(&[] as &[Fr], opening);
+    let public_transcript_inputs = [0x70, 0x01, 0x01, 0x00, 0x0e, 0x01, 0xa1]
+        .into_iter()
+        .map(Fr::from)
+        .collect();
+    exercise_proof_paths(
+        ir,
+        vec![],
+        Some((commitment, opening)),
+        public_transcript_inputs,
+        (6, 31),
+    )
+    .await;
+}
+
+#[test]
+fn compact_generated_hash_chain_cost_model_matches_ledger9() {
+    // Ledger9's 0.8.2 baseline for this Compact 0.36.1 circuit is k=15 and
+    // 32,185 rows. Detect complexity drift before running larger proofs.
+    let ir = IrSource::load(include_str!("compact-v3-hash-chain/hashAndIncrement.zkir").as_bytes())
+        .expect("load Compact-generated hash-chain IR");
+    assert_eq!((ir.k(), ir.model().rows()), (15, 32_185));
+}
+
+async fn exercise_proof_paths(
+    ir: IrSource,
+    inputs: Vec<Fr>,
+    communications_commitment: Option<(Fr, Fr)>,
+    public_transcript_inputs: Vec<Fr>,
+    expected_k_rows: (u8, usize),
+) {
     let k = ir.k();
+    let rows = ir.model().rows();
+    assert_eq!((k, rows), expected_k_rows);
     let params = ParamsProver(Arc::new(ParamsKZG::<Bls12>::unsafe_setup(
         k as u32,
         ChaCha20Rng::from_seed([7; 32]),
@@ -101,13 +150,18 @@ async fn generated_srs_proves_with_heap_and_mapped_spill_paths() {
     };
     let preimage = ProofPreimage {
         binding_input: 42.into(),
-        communications_commitment: None,
-        inputs: vec![1.into()],
+        communications_commitment,
+        inputs,
         private_transcript: vec![],
-        public_transcript_inputs: vec![],
+        public_transcript_inputs,
         public_transcript_outputs: vec![],
         key_location: KeyLocation(Cow::Borrowed("test")),
     };
+    let mut public_inputs = vec![Fr::from(42)];
+    if let Some((commitment, _)) = communications_commitment {
+        public_inputs.push(commitment);
+    }
+    public_inputs.extend(preimage.public_transcript_inputs.iter().copied());
     let rng = || ChaCha20Rng::from_seed([42; 32]);
     let (heap_proof, _) = preimage
         .prove::<IrSource>(rng(), &heap, &resolver)
@@ -115,7 +169,7 @@ async fn generated_srs_proves_with_heap_and_mapped_spill_paths() {
         .expect("heap proof");
     resolver
         .vk
-        .verify(&verifier_params, &heap_proof, [42.into()].into_iter())
+        .verify(&verifier_params, &heap_proof, public_inputs.iter().copied())
         .expect("verify heap proof");
 
     let params_dir = tempfile::tempdir().expect("private companion directory");
@@ -152,14 +206,20 @@ async fn generated_srs_proves_with_heap_and_mapped_spill_paths() {
         .expect("mapped and spilled proof");
     resolver
         .vk
-        .verify(&verifier_params, &mapped_proof, [42.into()].into_iter())
+        .verify(
+            &verifier_params,
+            &mapped_proof,
+            public_inputs.iter().copied(),
+        )
         .expect("verify mapped proof");
+    assert_eq!(heap_proof.0.len(), mapped_proof.0.len());
     // Proof bytes are not deterministic: proofs 0.8.3 draws quotient-limb
     // blinding from OsRng even when the caller supplies a seeded RNG.
+    public_inputs[0] = 43.into();
     assert!(
         resolver
             .vk
-            .verify(&verifier_params, &mapped_proof, [43.into()].into_iter())
+            .verify(&verifier_params, &mapped_proof, public_inputs.into_iter())
             .is_err()
     );
 }
