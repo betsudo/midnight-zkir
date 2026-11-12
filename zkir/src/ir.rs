@@ -15,6 +15,7 @@ use anyhow::Result;
 use base_crypto::fab::Alignment;
 use midnight_proofs::config::{ProverConfig, ProverContext};
 use midnight_proofs::dev::cost_model::CircuitModel;
+use midnight_zk_stdlib::KZG;
 #[cfg(feature = "proptest")]
 use proptest_derive::Arbitrary;
 use rand::{CryptoRng, Rng};
@@ -71,7 +72,7 @@ impl IrSource {
         let pi_skips = preproc.pi_skips.clone();
 
         let proof = match context {
-            Some(context) => midnight_zk_stdlib::prove_with_context::<_, TranscriptHash>(
+            Some(context) => midnight_zk_stdlib::prove_with_context::<_, TranscriptHash, KZG>(
                 context,
                 params_k.as_ref(),
                 &pk,
@@ -80,7 +81,7 @@ impl IrSource {
                 preproc,
                 rng,
             )?,
-            None => midnight_zk_stdlib::prove::<_, TranscriptHash>(
+            None => midnight_zk_stdlib::prove::<_, TranscriptHash, KZG>(
                 params_k.as_ref(),
                 &pk,
                 self,
@@ -115,7 +116,7 @@ pub enum IrMinorVersion {
 }
 
 impl Zkir for IrSource {
-    type ProverKey = midnight_zk_stdlib::MidnightPK<IrSource>;
+    type ProverKey = midnight_zk_stdlib::MidnightPK<IrSource, KZG>;
 
     fn check(
         &self,
@@ -185,7 +186,7 @@ impl Zkir for IrSource {
     }
 
     fn read_raw_pk(reader: impl Read) -> std::io::Result<Self::ProverKey> {
-        midnight_zk_stdlib::MidnightPK::<Self>::read(
+        midnight_zk_stdlib::MidnightPK::<Self, KZG>::read(
             &mut { reader },
             midnight_proofs::utils::SerdeFormat::RawBytesUnchecked,
         )
@@ -195,7 +196,7 @@ impl Zkir for IrSource {
         reader: impl Read,
         policy: &ProverConfig,
     ) -> std::io::Result<Self::ProverKey> {
-        midnight_zk_stdlib::MidnightPK::<Self>::read_with_policy(
+        midnight_zk_stdlib::MidnightPK::<Self, KZG>::read_with_policy(
             &mut { reader },
             midnight_proofs::utils::SerdeFormat::RawBytesUnchecked,
             policy,
@@ -1351,7 +1352,7 @@ impl IrSource {
     /// Retrieves a model representation of this circuit.
     pub fn model(&self) -> Model {
         Model {
-            model: midnight_zk_stdlib::cost_model(self, None),
+            model: midnight_zk_stdlib::cost_model::<_, KZG>(self, None, false),
         }
     }
 
@@ -1409,7 +1410,8 @@ impl IrSource {
             .init()
             .map_err(|_| anyhow::anyhow!("Could not init pk"))?;
 
-        let proof = prove::<_, TranscriptHash>(params_k.as_ref(), &pk, self, &pis, preproc, rng)?;
+        let proof =
+            prove::<_, TranscriptHash, KZG>(params_k.as_ref(), &pk, self, &pis, preproc, rng)?;
 
         Ok(Proof(proof))
     }
