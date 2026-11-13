@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Local 3.3.0 release candidate
+
+- Require the 0.8.3 proofs, 2.5.0 stdlib, 3.2.0 transient-crypto, and
+  1.1.2 base-crypto adapter graph for explicit per-request proving context.
+  The Wasm package follows the same ZKIR and transient-crypto candidate line.
+  These versions are local candidates, not published releases.
+
 ## ZKIR 3.2.1
 
 ### Fixes
