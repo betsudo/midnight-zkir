@@ -1,6 +1,6 @@
 [package]
 name = "midnight-zkir"
-version = "3.2.1"
+version = "3.3.0"
 edition = "2024"
 license.workspace = true
 repository.workspace = true
@@ -32,16 +32,16 @@ proptest = [
 ]
 
 [dependencies]
-base-crypto = { version = "1.1.0", package = "midnight-base-crypto" }
+base-crypto = { version = "1.1.2", package = "midnight-base-crypto" }
 serialize = { version = "1.0.0", package = "midnight-serialize" }
-transient-crypto = { version = "3.0.0", package = "midnight-transient-crypto", features = [
+transient-crypto = { version = "3.2.0", package = "midnight-transient-crypto", features = [
   "cli",
 ] }
 
-midnight-curves = { version = "^0.3.1" }
-midnight-proofs = { version = "^0.8.1" }
-midnight-circuits = { version = "^7.3.0" }
-midnight-zk-stdlib = { version = "^2.4.0" }
+midnight-curves = { version = "^0.3.2" }
+midnight-proofs = { version = "^0.8.4" }
+midnight-circuits = { version = "^7.3.1" }
+midnight-zk-stdlib = { version = "^2.5.0" }
 
 group = "^0.13.0"
 const-hex = "^1.14.0"
@@ -83,6 +83,7 @@ proptest-derive = { version = "0.8", optional = true }
 midnight-zkir = { path = ".", features = ["proptest"] }
 actix-rt = "^2.9.0"
 strum = { version = "^0.27", features = ["derive"] }
+tempfile = "^3.0"
 
 [lints]
 workspace = true
