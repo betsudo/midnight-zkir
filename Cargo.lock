@@ -1780,7 +1780,7 @@ dependencies = [
 [[package]]
 name = "midnight-base-crypto"
 version = "1.1.1"
-source = "git+https://github.com/betsudo/midnight-ledger?rev=53eff71103ee543c219ef0e0f2784a5f10fb6d94#53eff71103ee543c219ef0e0f2784a5f10fb6d94"
+source = "git+https://github.com/betsudo/midnight-ledger?rev=e38ea9598aecde7ef095b6ad1401a42c4e2de070#e38ea9598aecde7ef095b6ad1401a42c4e2de070"
 dependencies = [
  "anyhow",
  "atomic-write-file",
@@ -1814,7 +1814,7 @@ dependencies = [
 [[package]]
 name = "midnight-base-crypto-derive"
 version = "1.1.0"
-source = "git+https://github.com/betsudo/midnight-ledger?rev=53eff71103ee543c219ef0e0f2784a5f10fb6d94#53eff71103ee543c219ef0e0f2784a5f10fb6d94"
+source = "git+https://github.com/betsudo/midnight-ledger?rev=e38ea9598aecde7ef095b6ad1401a42c4e2de070#e38ea9598aecde7ef095b6ad1401a42c4e2de070"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1849,7 +1849,7 @@ dependencies = [
 [[package]]
 name = "midnight-curves"
 version = "0.3.1"
-source = "git+https://github.com/betsudo/midnight-zk?rev=b59d7e254fc2feb753449ad78a9e3740bb56b898#b59d7e254fc2feb753449ad78a9e3740bb56b898"
+source = "git+https://github.com/betsudo/midnight-zk?rev=6efa967d7f349ba77e35e2f6763a8d17b7df01e3#6efa967d7f349ba77e35e2f6763a8d17b7df01e3"
 dependencies = [
  "bitvec",
  "blst",
@@ -1878,7 +1878,7 @@ dependencies = [
 [[package]]
 name = "midnight-proofs"
 version = "0.8.2"
-source = "git+https://github.com/betsudo/midnight-zk?rev=b59d7e254fc2feb753449ad78a9e3740bb56b898#b59d7e254fc2feb753449ad78a9e3740bb56b898"
+source = "git+https://github.com/betsudo/midnight-zk?rev=6efa967d7f349ba77e35e2f6763a8d17b7df01e3#6efa967d7f349ba77e35e2f6763a8d17b7df01e3"
 dependencies = [
  "blake2b_simd",
  "ff 0.13.1",
@@ -1901,7 +1901,7 @@ dependencies = [
 [[package]]
 name = "midnight-serialize"
 version = "1.2.1"
-source = "git+https://github.com/betsudo/midnight-ledger?rev=53eff71103ee543c219ef0e0f2784a5f10fb6d94#53eff71103ee543c219ef0e0f2784a5f10fb6d94"
+source = "git+https://github.com/betsudo/midnight-ledger?rev=e38ea9598aecde7ef095b6ad1401a42c4e2de070#e38ea9598aecde7ef095b6ad1401a42c4e2de070"
 dependencies = [
  "crypto",
  "konst",
@@ -1917,7 +1917,7 @@ dependencies = [
 [[package]]
 name = "midnight-serialize-macros"
 version = "1.0.0"
-source = "git+https://github.com/betsudo/midnight-ledger?rev=53eff71103ee543c219ef0e0f2784a5f10fb6d94#53eff71103ee543c219ef0e0f2784a5f10fb6d94"
+source = "git+https://github.com/betsudo/midnight-ledger?rev=e38ea9598aecde7ef095b6ad1401a42c4e2de070#e38ea9598aecde7ef095b6ad1401a42c4e2de070"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1927,7 +1927,7 @@ dependencies = [
 [[package]]
 name = "midnight-storage-core"
 version = "1.2.3"
-source = "git+https://github.com/betsudo/midnight-ledger?rev=53eff71103ee543c219ef0e0f2784a5f10fb6d94#53eff71103ee543c219ef0e0f2784a5f10fb6d94"
+source = "git+https://github.com/betsudo/midnight-ledger?rev=e38ea9598aecde7ef095b6ad1401a42c4e2de070#e38ea9598aecde7ef095b6ad1401a42c4e2de070"
 dependencies = [
  "archery",
  "crypto",
@@ -1953,7 +1953,7 @@ dependencies = [
 [[package]]
 name = "midnight-storage-macros"
 version = "1.0.1"
-source = "git+https://github.com/betsudo/midnight-ledger?rev=53eff71103ee543c219ef0e0f2784a5f10fb6d94#53eff71103ee543c219ef0e0f2784a5f10fb6d94"
+source = "git+https://github.com/betsudo/midnight-ledger?rev=e38ea9598aecde7ef095b6ad1401a42c4e2de070#e38ea9598aecde7ef095b6ad1401a42c4e2de070"
 dependencies = [
  "midnight-serialize-macros",
  "proc-macro2",
@@ -1964,7 +1964,7 @@ dependencies = [
 [[package]]
 name = "midnight-transient-crypto"
 version = "3.1.0"
-source = "git+https://github.com/betsudo/midnight-ledger?rev=53eff71103ee543c219ef0e0f2784a5f10fb6d94#53eff71103ee543c219ef0e0f2784a5f10fb6d94"
+source = "git+https://github.com/betsudo/midnight-ledger?rev=e38ea9598aecde7ef095b6ad1401a42c4e2de070#e38ea9598aecde7ef095b6ad1401a42c4e2de070"
 dependencies = [
  "anyhow",
  "blake2b_simd",
@@ -2002,7 +2002,7 @@ dependencies = [
 [[package]]
 name = "midnight-zk-stdlib"
 version = "2.4.0"
-source = "git+https://github.com/betsudo/midnight-zk?rev=b59d7e254fc2feb753449ad78a9e3740bb56b898#b59d7e254fc2feb753449ad78a9e3740bb56b898"
+source = "git+https://github.com/betsudo/midnight-zk?rev=6efa967d7f349ba77e35e2f6763a8d17b7df01e3#6efa967d7f349ba77e35e2f6763a8d17b7df01e3"
 dependencies = [
  "base64 0.13.1",
  "bincode",
