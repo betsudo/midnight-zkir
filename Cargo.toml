@@ -28,9 +28,9 @@ panic = "abort"
 # Release-compatible Ledger9 context graph. These immutable fork sources
 # preserve the 0.8.2 key/proof format while adding an opt-in request context.
 [patch.crates-io]
-midnight-curves = { git = "https://github.com/betsudo/midnight-zk", rev = "6efa967d7f349ba77e35e2f6763a8d17b7df01e3" }
-midnight-proofs = { git = "https://github.com/betsudo/midnight-zk", rev = "6efa967d7f349ba77e35e2f6763a8d17b7df01e3" }
-midnight-zk-stdlib = { git = "https://github.com/betsudo/midnight-zk", rev = "6efa967d7f349ba77e35e2f6763a8d17b7df01e3" }
+midnight-curves = { git = "https://github.com/betsudo/midnight-zk", rev = "6b71786dcd60833377f22417643e8ccd48b60758" }
+midnight-proofs = { git = "https://github.com/betsudo/midnight-zk", rev = "6b71786dcd60833377f22417643e8ccd48b60758" }
+midnight-zk-stdlib = { git = "https://github.com/betsudo/midnight-zk", rev = "6b71786dcd60833377f22417643e8ccd48b60758" }
 midnight-transient-crypto = { git = "https://github.com/betsudo/midnight-ledger", rev = "7eb766d398468282fa4c3a40fc1475c2be7cd528" }
 midnight-base-crypto = { git = "https://github.com/betsudo/midnight-ledger", rev = "7eb766d398468282fa4c3a40fc1475c2be7cd528" }
 midnight-base-crypto-derive = { git = "https://github.com/betsudo/midnight-ledger", rev = "7eb766d398468282fa4c3a40fc1475c2be7cd528" }

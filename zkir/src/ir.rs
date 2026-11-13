@@ -52,6 +52,16 @@ pub struct IrSource {
 tag_enforcement_test!(IrSource);
 tag_enforcement_test!(ProverKey<IrSource>);
 
+fn check_request_cancelled(
+    context: Option<&ProverContext>,
+    phase: &'static str,
+) -> Result<(), ProvingError> {
+    if context.is_some_and(ProverContext::is_cancelled) {
+        return Err(midnight_proofs::plonk::Error::Cancelled { phase }.into());
+    }
+    Ok(())
+}
+
 impl IrSource {
     async fn prove_impl(
         &self,
@@ -61,14 +71,19 @@ impl IrSource {
         preimage: &ProofPreimage,
         context: Option<&ProverContext>,
     ) -> Result<(Proof, Vec<Fr>, Vec<Option<usize>>), ProvingError> {
+        check_request_cancelled(context, "zkir.preprocess.start")?;
+        let preproc = self.preprocess(preimage)?;
+        check_request_cancelled(context, "zkir.preprocess.end")?;
+        let pis = preproc.pis.clone();
+        let pi_skips = preproc.pi_skips.clone();
+
         let pk = match context {
             Some(context) => pk.init_with_context(context)?,
             None => pk.init()?,
         };
+        check_request_cancelled(context, "zkir.params.start")?;
         let params_k = params.get_params(pk.k()).await?;
-        let preproc = self.preprocess(preimage)?;
-        let pis = preproc.pis.clone();
-        let pi_skips = preproc.pi_skips.clone();
+        check_request_cancelled(context, "zkir.params.end")?;
 
         let proof = match context {
             Some(context) => midnight_zk_stdlib::prove_with_context::<_, TranscriptHash>(
