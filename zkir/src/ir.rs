@@ -175,6 +175,20 @@ impl Zkir for IrSource {
         ))
     }
 
+    async fn keygen_with_policy(
+        &self,
+        params: &impl ParamsProverProvider,
+        policy: &ProverConfig,
+    ) -> Result<(ProverKey<Self>, transient_crypto::proofs::VerifierKey), anyhow::Error> {
+        use midnight_zk_stdlib::{setup_pk_with_config, setup_vk};
+        let vk = setup_vk(params.get_params(self.k()).await?.as_ref(), self);
+        let pk = setup_pk_with_config(self, &vk, policy)?;
+        Ok((
+            ProverKey::from_raw(pk),
+            transient_crypto::proofs::VerifierKey::from(vk),
+        ))
+    }
+
     fn load_ir_from_tagged(reader: impl Read + std::io::Seek) -> std::io::Result<Self> {
         serialize::tagged_deserialize(reader)
     }
