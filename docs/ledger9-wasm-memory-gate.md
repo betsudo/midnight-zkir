@@ -18,3 +18,12 @@ tree had no `memmap2` dependency or `disk-spill` feature.
 This is a compile and dependency-boundary check. It does not exercise browser
 runtime behavior or a published package graph. The Cargo lockfile update
 required for the temporary local patches was restored after the check.
+
+## Distinct local package versions
+
+On 2026-11-13 the same Wasm check passed after selecting local ZK curves
+0.3.2, circuits 7.3.1, proofs 0.8.4, and stdlib 2.5.0, with Ledger
+transient-crypto 3.2.0 and this ZKIR 3.3.0 source. Cargo's Wasm dependency
+tree resolved one proofs 0.8.4 and no `memmap2`, `mmap`, or `disk-spill`
+activation. Temporary path patches supplied the unpublished source stack;
+the result remains a compile gate, not browser runtime or release evidence.
