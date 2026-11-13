@@ -12,9 +12,8 @@
 // limitations under the License.
 
 //! `inner_proof` consumes one entry of `ProofPreimage::inner_proofs` per
-//! instruction, whatever its guard, so the vector's length is fixed by the
-//! circuit and not by the path taken. Its pairing with `prepare_verification` is
-//! checked before either pass runs.
+//! guarded-on instruction. Its pairing with `prepare_verification` is checked
+//! before either pass runs.
 //!
 //! Every guard here is a constant `0x00`, which is what keeps these tests fast:
 //! a guarded-off `prepare_verification` returns the trivial accumulator without reading
@@ -95,24 +94,15 @@ fn load(instructions: Vec<String>) -> IrSource {
 }
 
 #[test]
-fn one_proof_witness_per_instruction_whatever_the_guard() {
+fn a_guarded_off_instruction_consumes_no_proof_witness() {
     let ir = load([pair("%p_0"), pair("%p_1")].concat());
-
-    // Neither proof is verified, yet both slots must still be supplied: the
-    // count follows the instruction list, not the guards.
-    ir.check(&preimage(vec![blank(), blank()]))
-        .expect("two instructions, two witnesses");
+    ir.check(&preimage(vec![]))
+        .expect("both guarded off, no witnesses");
 
     let msg = rejection([pair("%p_0"), pair("%p_1")].concat(), 1);
     assert!(
-        msg.contains("Not enough proof witnesses: ran out at index 1"),
-        "too few must name the binding that ran out, got: {msg}"
-    );
-
-    let msg = rejection([pair("%p_0"), pair("%p_1")].concat(), 3);
-    assert!(
-        msg.contains("Expected 2 proof witnesses (one per InnerProof), received 3"),
-        "too many must be refused on the count, got: {msg}"
+        msg.contains("Expected 0 proof witnesses (one per guarded-on InnerProof), received 1"),
+        "a surplus must be refused on the count, got: {msg}"
     );
 }
 

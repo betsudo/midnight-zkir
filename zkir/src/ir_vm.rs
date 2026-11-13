@@ -923,20 +923,17 @@ impl IrSource {
                     acc_pis.extend(acc.as_public_input().into_iter().map(Fr));
                 }
                 I::InnerProof { guard, output } => {
-                    // One witness per instruction, whatever the guard, so both
-                    // passes index them the same way.
-                    let InnerProofWitness::Direct(bytes) =
-                        preimage.inner_proofs.get(inner_proofs_idx).ok_or_else(|| {
-                            anyhow!(
-                                "Not enough proof witnesses: ran out at index {}",
-                                inner_proofs_idx
-                            )
-                        })?;
-                    inner_proofs_idx += 1;
-
-                    // Guarded off, the witness is ignored: the `PrepareVerification`
+                    // Guarded off, no witness is consumed: the `PrepareVerification`
                     // under the same guard discards the accumulator it produces.
                     let proof = if resolve_operand_bool(&memory, guard)? {
+                        let InnerProofWitness::Direct(bytes) =
+                            preimage.inner_proofs.get(inner_proofs_idx).ok_or_else(|| {
+                                anyhow!(
+                                    "Not enough proof witnesses: ran out at index {}",
+                                    inner_proofs_idx
+                                )
+                            })?;
+                        inner_proofs_idx += 1;
                         bytes.clone()
                     } else {
                         Vec::new()
@@ -963,7 +960,7 @@ impl IrSource {
         }
         if preimage.inner_proofs.len() != inner_proofs_idx {
             bail!(
-                "Expected {} proof witnesses (one per InnerProof), received {}",
+                "Expected {} proof witnesses (one per guarded-on InnerProof), received {}",
                 inner_proofs_idx,
                 preimage.inner_proofs.len()
             );
@@ -1783,9 +1780,6 @@ impl Relation for IrSource {
                 // The guard is off-circuit bookkeeping only: `preprocess` already
                 // resolved it, binding the empty blob where it was off, and
                 // recorded one witness per instruction for us to index.
-                // Both passes walk one slot per instruction, so this index
-                // advances with the instruction list exactly as the off-circuit
-                // one does.
                 I::InnerProof { guard: _, output } => {
                     let idx = inner_proof_idx;
                     inner_proof_idx += 1;

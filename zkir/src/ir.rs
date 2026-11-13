@@ -1421,8 +1421,6 @@ pub enum Instruction {
     /// condition, deferring the final pairing to an `Accumulator`.
     ///
     /// If `guard` is `false`, the output is the trivial accumulator.
-    /// A guarded-off instruction still consumes one `InnerProof` binding,
-    /// but never depends on its contents.
     ///
     /// The VK is fixed circuit data, resolved out-of-band: `vk_hash` binds
     /// which VK the circuit was compiled against.
@@ -1451,10 +1449,9 @@ pub enum Instruction {
     /// Off-circuit (preprocessing):
     /// Binds `output` to the next inner proof from
     /// [`ProofPreimage::inner_proofs`](transient_crypto::proofs::ProofPreimage),
-    /// consumed in instruction order: one per instruction, whatever its guard,
-    /// so the vector's length is fixed by the circuit and not by the path taken.
-    /// If `guard` is `false` the witness is ignored and `output` is bound to the
-    /// empty blob, so the caller can pass a blank entry there.
+    /// consumed in instruction order.
+    /// If `guard` is `false` no witness is consumed and `output` is bound to the
+    /// empty blob.
     ///
     /// In-circuit:
     /// Binds `output` to the same blob as a free prover witness. It carries no
@@ -1466,8 +1463,7 @@ pub enum Instruction {
     ///
     /// One output, the inner proof.
     InnerProof {
-        /// The boolean condition under which the proof witness is bound. One
-        /// witness is consumed either way.
+        /// The boolean condition under which the proof witness is consumed.
         guard: Operand,
         /// The output variable name.
         output: Identifier,

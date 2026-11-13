@@ -350,44 +350,31 @@ async fn corrupted_proof_is_rejected() {
     );
 }
 
-/// Guarded off, `prepare_verification` exposes the trivial accumulator whatever the
-/// witness bytes are.
+/// Guarded off, `prepare_verification` exposes the trivial accumulator, with no
+/// inner proof witness supplied.
 #[actix_rt::test]
 #[ignore = "slow: builds and proves a high-k outer circuit"]
-async fn guarded_off_verify_proof_is_witness_independent() {
+async fn guarded_off_verify_proof_needs_no_witness() {
     let mut rng = test_rng();
     let inner = scalar_inner_proof(&mut rng).await;
     let ir = shared_guard_ir(&inner);
     let (pk, vk) = outer_keygen(&ir, "shared guard, off").await;
 
-    let trivial = trivial_accumulator().as_public_input();
+    let preimage = outer_preimage_with(vec![], vec![Fr::from(0u64)], vec![]);
+    let (proof, pis) = outer_prove(&ir, pk, &preimage, &mut rng).await;
 
-    // Same length as a real proof, so no size check can tell them apart.
-    let garbage = vec![0xABu8; inner.proof.len()];
-    assert_ne!(garbage, inner.proof, "the two witnesses must differ");
+    assert_eq!(
+        proof.accumulators.len(),
+        1,
+        "a guarded-off prepare_verification still occupies its block"
+    );
+    assert_eq!(
+        proof.accumulators[0].as_public_input(),
+        trivial_accumulator().as_public_input(),
+        "the exposed accumulator must be the trivial one"
+    );
 
-    for (label, witness) in [
-        ("a genuine inner proof", inner.proof.clone()),
-        ("bytes that are not a proof", garbage),
-    ] {
-        println!("--- guarded off, witness: {label} ---");
-
-        let preimage = outer_preimage_with(vec![witness], vec![Fr::from(0u64)], vec![]);
-        let (proof, pis) = outer_prove(&ir, pk.clone(), &preimage, &mut rng).await;
-
-        assert_eq!(
-            proof.accumulators.len(),
-            1,
-            "{label}: a guarded-off prepare_verification still occupies its block"
-        );
-        assert_eq!(
-            proof.accumulators[0].as_public_input(),
-            trivial,
-            "{label}: the exposed accumulator must be the trivial one"
-        );
-
-        outer_verify(&vk, &proof, pis);
-    }
+    outer_verify(&vk, &proof, pis);
 }
 
 /// Two `prepare_verification`s over different keys, with an `Impact` between them
@@ -1392,14 +1379,15 @@ fn witnessed_outer_ir(vk_blob: &[u8], instance_len: usize, carries: bool) -> IrS
 /// The outer proof's preimage for [`witnessed_outer_ir`]. Guarded off, there is
 /// no inner proof and no inner instance to supply at all.
 fn witnessed_outer_preimage(guard: bool, proof: &[u8], instance: &[Fq]) -> ProofPreimage {
-    let (proof, instance) = if guard {
-        (proof.to_vec(), instance.iter().copied().map(Fr).collect())
+    let (proofs, instance) = if guard {
+        (
+            vec![proof.to_vec()],
+            instance.iter().copied().map(Fr).collect(),
+        )
     } else {
         (vec![], vec![])
     };
-    // One slot for the circuit's single `inner_proof`, whatever the guard;
-    // blank where it is off.
-    let mut preimage = outer_preimage_with(vec![proof], vec![Fr::from(guard as u64)], vec![]);
+    let mut preimage = outer_preimage_with(proofs, vec![Fr::from(guard as u64)], vec![]);
     // The inner instance, as ordinary prover witnesses.
     preimage.private_transcript = instance;
     preimage

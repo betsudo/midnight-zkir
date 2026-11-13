@@ -317,13 +317,11 @@ fn surplus_witness_or_vk_is_rejected() {
         &bind_and_verify_off(&[vk_hash_hex(&VK_BLOB_A)]),
         vec![VK_BLOB_A.to_vec()],
     );
-    let err = expect_check_err(&paired, preimage(2));
+    let err = expect_check_err(&paired, preimage(1));
     assert!(err.contains("proof witnesses"), "got: {err}");
 
     ir("").check(&preimage(0)).expect("empty circuit");
-    paired
-        .check(&preimage(1))
-        .expect("one binding, one witness");
+    paired.check(&preimage(0)).expect("guarded off, no witness");
 }
 
 /// The `inner_proof` / `prepare_verification` text format round-trips through JSON.
