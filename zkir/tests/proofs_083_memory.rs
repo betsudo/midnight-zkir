@@ -212,9 +212,10 @@ async fn exercise_proof_paths(
             public_inputs.iter().copied(),
         )
         .expect("verify mapped proof");
-    assert_eq!(heap_proof.0.len(), mapped_proof.0.len());
-    // Proof bytes are not deterministic: proofs 0.8.3 draws quotient-limb
-    // blinding from OsRng even when the caller supplies a seeded RNG.
+    assert_eq!(
+        heap_proof.0, mapped_proof.0,
+        "the same caller RNG and key must produce identical heap and mapped proofs"
+    );
     public_inputs[0] = 43.into();
     assert!(
         resolver
