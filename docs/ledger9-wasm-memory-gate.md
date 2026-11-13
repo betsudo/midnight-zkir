@@ -27,3 +27,14 @@ transient-crypto 3.2.0 and this ZKIR 3.3.0 source. Cargo's Wasm dependency
 tree resolved one proofs 0.8.4 and no `memmap2`, `mmap`, or `disk-spill`
 activation. Temporary path patches supplied the unpublished source stack;
 the result remains a compile gate, not browser runtime or release evidence.
+
+## Immutable fork dependency gate
+
+The `betsudo` source pins in this branch resolve ZK proofs at
+`032da948f08efbb9dd27489ae8cfdc0c2268b2ac` and Ledger transient-crypto
+at `4b2af62d0e5a7967d28109a604bb944686077200`. With those pins and the
+committed lockfile, `cargo check --locked -p midnight-zkir` and
+`cargo check --locked --target wasm32-unknown-unknown -p midnight-zkir-wasm`
+passed on 2026-11-13. The Wasm dependency tree had one proofs 0.8.4 source
+and no `memmap2` or `disk-spill` activation. This checks the pinned source
+graph; it does not measure browser runtime memory.

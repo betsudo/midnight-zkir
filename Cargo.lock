@@ -1846,7 +1846,7 @@ dependencies = [
 [[package]]
 name = "midnight-circuits"
 version = "7.3.1"
-source = "git+https://github.com/betsudo/midnight-zk.git?rev=cfbbf39ffbb470c8e026550aedbd72204a7d1531#cfbbf39ffbb470c8e026550aedbd72204a7d1531"
+source = "git+https://github.com/betsudo/midnight-zk.git?rev=032da948f08efbb9dd27489ae8cfdc0c2268b2ac#032da948f08efbb9dd27489ae8cfdc0c2268b2ac"
 dependencies = [
  "base64 0.13.1",
  "ff 0.13.1",
@@ -1897,7 +1897,7 @@ dependencies = [
 [[package]]
 name = "midnight-curves"
 version = "0.3.2"
-source = "git+https://github.com/betsudo/midnight-zk.git?rev=cfbbf39ffbb470c8e026550aedbd72204a7d1531#cfbbf39ffbb470c8e026550aedbd72204a7d1531"
+source = "git+https://github.com/betsudo/midnight-zk.git?rev=032da948f08efbb9dd27489ae8cfdc0c2268b2ac#032da948f08efbb9dd27489ae8cfdc0c2268b2ac"
 dependencies = [
  "bitvec",
  "blst",
@@ -1923,7 +1923,7 @@ dependencies = [
 [[package]]
 name = "midnight-proofs"
 version = "0.8.4"
-source = "git+https://github.com/betsudo/midnight-zk.git?rev=cfbbf39ffbb470c8e026550aedbd72204a7d1531#cfbbf39ffbb470c8e026550aedbd72204a7d1531"
+source = "git+https://github.com/betsudo/midnight-zk.git?rev=032da948f08efbb9dd27489ae8cfdc0c2268b2ac#032da948f08efbb9dd27489ae8cfdc0c2268b2ac"
 dependencies = [
  "blake2b_simd",
  "ff 0.13.1",
@@ -2048,7 +2048,7 @@ dependencies = [
 [[package]]
 name = "midnight-zk-stdlib"
 version = "2.5.0"
-source = "git+https://github.com/betsudo/midnight-zk.git?rev=cfbbf39ffbb470c8e026550aedbd72204a7d1531#cfbbf39ffbb470c8e026550aedbd72204a7d1531"
+source = "git+https://github.com/betsudo/midnight-zk.git?rev=032da948f08efbb9dd27489ae8cfdc0c2268b2ac#032da948f08efbb9dd27489ae8cfdc0c2268b2ac"
 dependencies = [
  "base64 0.13.1",
  "bincode",
@@ -2545,9 +2545,9 @@ dependencies = [
 
 [[package]]
 name = "quinn-udp"
-version = "0.5.15"
+version = "0.5.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35a133f956daabe89a61a685c2649f13d82d5aa4bd5d12d1277e1072a21c0694"
+checksum = "af66907df18639dcf4db56ca65490cabc4b27a97dbadd96f2926cca73298f016"
 dependencies = [
  "cfg_aliases",
  "libc",
@@ -3386,7 +3386,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "once_cell",
  "rustix",
  "windows-sys 0.52.0",

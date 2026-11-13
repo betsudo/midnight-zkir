@@ -1,4 +1,4 @@
-// This file is part of midnight-ledger.
+// This file is part of midnight-zkir.
 // Copyright (C) Midnight Foundation
 // SPDX-License-Identifier: Apache-2.0
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -8,7 +8,7 @@
 
 #![cfg(not(target_family = "wasm"))]
 
-//! Exercise ZKIR v3 through the proofs 0.8.3 memory paths with a small,
+//! Exercise ZKIR v3 through the proofs 0.8.4 memory paths with a small,
 //! generated SRS. No external parameter file or proof server is required.
 
 use std::{borrow::Cow, io, sync::Arc};
