@@ -31,8 +31,8 @@ panic = "abort"
 midnight-curves = { git = "https://github.com/betsudo/midnight-zk", rev = "6efa967d7f349ba77e35e2f6763a8d17b7df01e3" }
 midnight-proofs = { git = "https://github.com/betsudo/midnight-zk", rev = "6efa967d7f349ba77e35e2f6763a8d17b7df01e3" }
 midnight-zk-stdlib = { git = "https://github.com/betsudo/midnight-zk", rev = "6efa967d7f349ba77e35e2f6763a8d17b7df01e3" }
-midnight-transient-crypto = { git = "https://github.com/betsudo/midnight-ledger", rev = "e38ea9598aecde7ef095b6ad1401a42c4e2de070" }
-midnight-base-crypto = { git = "https://github.com/betsudo/midnight-ledger", rev = "e38ea9598aecde7ef095b6ad1401a42c4e2de070" }
-midnight-base-crypto-derive = { git = "https://github.com/betsudo/midnight-ledger", rev = "e38ea9598aecde7ef095b6ad1401a42c4e2de070" }
-midnight-serialize = { git = "https://github.com/betsudo/midnight-ledger", rev = "e38ea9598aecde7ef095b6ad1401a42c4e2de070" }
-midnight-storage-core = { git = "https://github.com/betsudo/midnight-ledger", rev = "e38ea9598aecde7ef095b6ad1401a42c4e2de070" }
+midnight-transient-crypto = { git = "https://github.com/betsudo/midnight-ledger", rev = "7eb766d398468282fa4c3a40fc1475c2be7cd528" }
+midnight-base-crypto = { git = "https://github.com/betsudo/midnight-ledger", rev = "7eb766d398468282fa4c3a40fc1475c2be7cd528" }
+midnight-base-crypto-derive = { git = "https://github.com/betsudo/midnight-ledger", rev = "7eb766d398468282fa4c3a40fc1475c2be7cd528" }
+midnight-serialize = { git = "https://github.com/betsudo/midnight-ledger", rev = "7eb766d398468282fa4c3a40fc1475c2be7cd528" }
+midnight-storage-core = { git = "https://github.com/betsudo/midnight-ledger", rev = "7eb766d398468282fa4c3a40fc1475c2be7cd528" }

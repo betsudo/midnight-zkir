@@ -169,7 +169,7 @@ impl Zkir for IrSource {
         let vk = setup_vk(params.get_params(self.k()).await?.as_ref(), self);
         let pk = setup_pk(self, &vk);
         Ok((
-            ProverKey::from_raw(pk),
+            ProverKey::from_raw_under_process_policy(pk),
             transient_crypto::proofs::VerifierKey::from(vk),
         ))
     }
