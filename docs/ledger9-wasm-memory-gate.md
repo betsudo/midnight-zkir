@@ -31,7 +31,7 @@ the result remains a compile gate, not browser runtime or release evidence.
 ## Immutable fork dependency gate
 
 The `betsudo` source pins in this branch resolve ZK proofs at
-`32de75927f655dba0d13db53e8777c3e3bd9d5b0` and Ledger transient-crypto
+`4fcb89a7093362ad0c9922314ef79493e79d487c` and Ledger transient-crypto
 at `4b2af62d0e5a7967d28109a604bb944686077200`. With those pins and the
 committed lockfile, `cargo check --locked -p midnight-zkir` and
 `cargo check --locked --target wasm32-unknown-unknown -p midnight-zkir-wasm`

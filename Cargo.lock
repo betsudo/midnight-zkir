@@ -1846,7 +1846,7 @@ dependencies = [
 [[package]]
 name = "midnight-circuits"
 version = "7.3.1"
-source = "git+https://github.com/betsudo/midnight-zk.git?rev=32de75927f655dba0d13db53e8777c3e3bd9d5b0#32de75927f655dba0d13db53e8777c3e3bd9d5b0"
+source = "git+https://github.com/betsudo/midnight-zk.git?rev=4fcb89a7093362ad0c9922314ef79493e79d487c#4fcb89a7093362ad0c9922314ef79493e79d487c"
 dependencies = [
  "base64 0.13.1",
  "ff 0.13.1",
@@ -1897,7 +1897,7 @@ dependencies = [
 [[package]]
 name = "midnight-curves"
 version = "0.3.2"
-source = "git+https://github.com/betsudo/midnight-zk.git?rev=32de75927f655dba0d13db53e8777c3e3bd9d5b0#32de75927f655dba0d13db53e8777c3e3bd9d5b0"
+source = "git+https://github.com/betsudo/midnight-zk.git?rev=4fcb89a7093362ad0c9922314ef79493e79d487c#4fcb89a7093362ad0c9922314ef79493e79d487c"
 dependencies = [
  "bitvec",
  "blst",
@@ -1923,7 +1923,7 @@ dependencies = [
 [[package]]
 name = "midnight-proofs"
 version = "0.8.4"
-source = "git+https://github.com/betsudo/midnight-zk.git?rev=32de75927f655dba0d13db53e8777c3e3bd9d5b0#32de75927f655dba0d13db53e8777c3e3bd9d5b0"
+source = "git+https://github.com/betsudo/midnight-zk.git?rev=4fcb89a7093362ad0c9922314ef79493e79d487c#4fcb89a7093362ad0c9922314ef79493e79d487c"
 dependencies = [
  "blake2b_simd",
  "ff 0.13.1",
@@ -2048,7 +2048,7 @@ dependencies = [
 [[package]]
 name = "midnight-zk-stdlib"
 version = "2.5.0"
-source = "git+https://github.com/betsudo/midnight-zk.git?rev=32de75927f655dba0d13db53e8777c3e3bd9d5b0#32de75927f655dba0d13db53e8777c3e3bd9d5b0"
+source = "git+https://github.com/betsudo/midnight-zk.git?rev=4fcb89a7093362ad0c9922314ef79493e79d487c#4fcb89a7093362ad0c9922314ef79493e79d487c"
 dependencies = [
  "base64 0.13.1",
  "bincode",
@@ -3128,7 +3128,7 @@ dependencies = [
 [[package]]
 name = "sha3-circuit"
 version = "0.1.1"
-source = "git+https://github.com/betsudo/midnight-zk.git?rev=32de75927f655dba0d13db53e8777c3e3bd9d5b0#32de75927f655dba0d13db53e8777c3e3bd9d5b0"
+source = "git+https://github.com/betsudo/midnight-zk.git?rev=4fcb89a7093362ad0c9922314ef79493e79d487c#4fcb89a7093362ad0c9922314ef79493e79d487c"
 dependencies = [
  "blake2b_simd",
  "ff 0.13.1",
