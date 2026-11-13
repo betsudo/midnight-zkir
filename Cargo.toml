@@ -11,7 +11,25 @@ default-members = [
 
 [workspace.package]
 license = "Apache-2.0"
-repository = "https://github.com/midnightntwrk/midnight-zkir"
+repository = "https://github.com/betsudo/midnight-zkir"
+
+[patch.crates-io]
+# Ledger9's optimized packages are not published. Pin exact reviewed source
+# commits so CI cannot silently fall back to registry proof implementations.
+midnight-curves = { git = "https://github.com/betsudo/midnight-zk.git", rev = "cfbbf39ffbb470c8e026550aedbd72204a7d1531" }
+midnight-circuits = { git = "https://github.com/betsudo/midnight-zk.git", rev = "cfbbf39ffbb470c8e026550aedbd72204a7d1531" }
+midnight-proofs = { git = "https://github.com/betsudo/midnight-zk.git", rev = "cfbbf39ffbb470c8e026550aedbd72204a7d1531" }
+midnight-zk-stdlib = { git = "https://github.com/betsudo/midnight-zk.git", rev = "cfbbf39ffbb470c8e026550aedbd72204a7d1531" }
+midnight-transient-crypto = { git = "https://github.com/betsudo/midnight-ledger.git", rev = "4b2af62d0e5a7967d28109a604bb944686077200" }
+midnight-base-crypto = { git = "https://github.com/betsudo/midnight-ledger.git", rev = "4b2af62d0e5a7967d28109a604bb944686077200" }
+midnight-base-crypto-derive = { git = "https://github.com/betsudo/midnight-ledger.git", rev = "4b2af62d0e5a7967d28109a604bb944686077200" }
+midnight-serialize = { git = "https://github.com/betsudo/midnight-ledger.git", rev = "4b2af62d0e5a7967d28109a604bb944686077200" }
+midnight-storage-core = { git = "https://github.com/betsudo/midnight-ledger.git", rev = "4b2af62d0e5a7967d28109a604bb944686077200" }
+
+# The sha3-circuit revision used by zk-stdlib depends on upstream ZK's
+# mutable main branch. Bind that git source to the same Ledger9 proof commit.
+[patch."https://github.com/midnightntwrk/midnight-zk"]
+midnight-proofs = { git = "https://github.com/betsudo/midnight-zk.git", rev = "cfbbf39ffbb470c8e026550aedbd72204a7d1531" }
 
 [workspace.lints.clippy]
 redundant_clone = "warn"
