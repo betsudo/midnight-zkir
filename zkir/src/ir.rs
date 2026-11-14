@@ -77,19 +77,22 @@ impl IrSource {
         let pis = preproc.pis.clone();
         let pi_skips = preproc.pi_skips.clone();
 
-        let pk = match context {
+        let loaded_pk = match context {
             Some(context) => pk.init_with_context(context)?,
             None => pk.init()?,
         };
+        // The loaded key owns its storage. Release the deserialized key bytes
+        // before the potentially long proof, rather than retaining both.
+        drop(pk);
         check_request_cancelled(context, "zkir.params.start")?;
-        let params_k = params.get_params(pk.k()).await?;
+        let params_k = params.get_params(loaded_pk.k()).await?;
         check_request_cancelled(context, "zkir.params.end")?;
 
         let proof = match context {
             Some(context) => midnight_zk_stdlib::prove_with_context::<_, TranscriptHash>(
                 context,
                 params_k.as_ref(),
-                &pk,
+                &loaded_pk,
                 self,
                 &pis,
                 preproc,
@@ -97,7 +100,7 @@ impl IrSource {
             )?,
             None => midnight_zk_stdlib::prove::<_, TranscriptHash>(
                 params_k.as_ref(),
-                &pk,
+                &loaded_pk,
                 self,
                 &pis,
                 preproc,
