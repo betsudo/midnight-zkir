@@ -28,11 +28,11 @@ panic = "abort"
 # Release-compatible Ledger9 context graph. These immutable fork sources
 # preserve the 0.8.2 key/proof format while adding an opt-in request context.
 [patch.crates-io]
-midnight-curves = { git = "https://github.com/betsudo/midnight-zk", rev = "418ae10fe181399ff3508a2d8f3e180d0f56af73" }
-midnight-proofs = { git = "https://github.com/betsudo/midnight-zk", rev = "418ae10fe181399ff3508a2d8f3e180d0f56af73" }
-midnight-zk-stdlib = { git = "https://github.com/betsudo/midnight-zk", rev = "418ae10fe181399ff3508a2d8f3e180d0f56af73" }
-midnight-transient-crypto = { git = "https://github.com/betsudo/midnight-ledger", rev = "7eb766d398468282fa4c3a40fc1475c2be7cd528" }
-midnight-base-crypto = { git = "https://github.com/betsudo/midnight-ledger", rev = "7eb766d398468282fa4c3a40fc1475c2be7cd528" }
-midnight-base-crypto-derive = { git = "https://github.com/betsudo/midnight-ledger", rev = "7eb766d398468282fa4c3a40fc1475c2be7cd528" }
-midnight-serialize = { git = "https://github.com/betsudo/midnight-ledger", rev = "7eb766d398468282fa4c3a40fc1475c2be7cd528" }
-midnight-storage-core = { git = "https://github.com/betsudo/midnight-ledger", rev = "7eb766d398468282fa4c3a40fc1475c2be7cd528" }
+midnight-curves = { git = "https://github.com/betsudo/midnight-zk", rev = "8044e4d874a857d019507ad12fea9c0d2741e364" }
+midnight-proofs = { git = "https://github.com/betsudo/midnight-zk", rev = "8044e4d874a857d019507ad12fea9c0d2741e364" }
+midnight-zk-stdlib = { git = "https://github.com/betsudo/midnight-zk", rev = "8044e4d874a857d019507ad12fea9c0d2741e364" }
+midnight-transient-crypto = { git = "https://github.com/betsudo/midnight-ledger", rev = "43ea9d99c81c254059319669b9c2406af173257d" }
+midnight-base-crypto = { git = "https://github.com/betsudo/midnight-ledger", rev = "43ea9d99c81c254059319669b9c2406af173257d" }
+midnight-base-crypto-derive = { git = "https://github.com/betsudo/midnight-ledger", rev = "43ea9d99c81c254059319669b9c2406af173257d" }
+midnight-serialize = { git = "https://github.com/betsudo/midnight-ledger", rev = "43ea9d99c81c254059319669b9c2406af173257d" }
+midnight-storage-core = { git = "https://github.com/betsudo/midnight-ledger", rev = "43ea9d99c81c254059319669b9c2406af173257d" }
