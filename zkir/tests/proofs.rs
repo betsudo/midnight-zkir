@@ -197,8 +197,7 @@ mod proof_tests {
             let key: ProverKey =
                 Deserializable::deserialize(&mut &corrupt_key_data[..], 0).unwrap();
             key.init()
-                .err()
-                .expect("corrupt key must fail initialization")
+                .expect_err("corrupt key must fail initialization")
                 .to_string()
         };
         let legacy_error = ir
