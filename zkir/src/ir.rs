@@ -71,22 +71,34 @@ impl IrSource {
         preimage: &ProofPreimage,
         context: Option<&ProverContext>,
     ) -> Result<(Proof, Vec<Fr>, Vec<Option<usize>>), ProvingError> {
-        check_request_cancelled(context, "zkir.preprocess.start")?;
-        let preproc = self.preprocess(preimage)?;
-        check_request_cancelled(context, "zkir.preprocess.end")?;
+        let (loaded_pk, params_k, preproc) = match context {
+            Some(context) => {
+                check_request_cancelled(Some(context), "zkir.preprocess.start")?;
+                let preproc = self.preprocess(preimage)?;
+                check_request_cancelled(Some(context), "zkir.preprocess.end")?;
+                let loaded_pk = pk.init_with_context(context)?;
+                // Release this local handle before parameter loading and proving.
+                // A resolver may still retain a clone of the serialized key.
+                drop(pk);
+                check_request_cancelled(Some(context), "zkir.params.start")?;
+                let params_k = params.get_params(loaded_pk.k()).await?;
+                check_request_cancelled(Some(context), "zkir.params.end")?;
+                (loaded_pk, params_k, preproc)
+            }
+            None => {
+                // Preserve the released context-free path's initialization,
+                // parameter lookup, preprocessing, and error ordering.
+                let params_k = params.get_params(pk.init()?.k()).await?;
+                let preproc = self.preprocess(preimage)?;
+                let loaded_pk = pk
+                    .init()
+                    .map_err(|_| anyhow::anyhow!("Could not init pk"))?;
+                drop(pk);
+                (loaded_pk, params_k, preproc)
+            }
+        };
         let pis = preproc.pis.clone();
         let pi_skips = preproc.pi_skips.clone();
-
-        let loaded_pk = match context {
-            Some(context) => pk.init_with_context(context)?,
-            None => pk.init()?,
-        };
-        // The loaded key owns its storage. Release the deserialized key bytes
-        // before the potentially long proof, rather than retaining both.
-        drop(pk);
-        check_request_cancelled(context, "zkir.params.start")?;
-        let params_k = params.get_params(loaded_pk.k()).await?;
-        check_request_cancelled(context, "zkir.params.end")?;
 
         let proof = match context {
             Some(context) => midnight_zk_stdlib::prove_with_context::<_, TranscriptHash>(

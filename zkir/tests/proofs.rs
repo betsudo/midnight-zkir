@@ -165,7 +165,9 @@ mod proof_tests {
             .expect_err("pre-cancelled V3 request should stop before key loading");
         assert!(matches!(
             error.downcast_ref::<midnight_proofs::plonk::Error>(),
-            Some(midnight_proofs::plonk::Error::Cancelled { .. })
+            Some(midnight_proofs::plonk::Error::Cancelled {
+                phase: "zkir.preprocess.start"
+            })
         ));
 
         let mut invalid_preimage = preimage.clone();
@@ -187,6 +189,22 @@ mod proof_tests {
         assert!(
             error.to_string().contains("Not enough raw inputs"),
             "expected preimage validation error, got: {error}"
+        );
+
+        let corrupt_legacy_key: ProverKey =
+            Deserializable::deserialize(&mut &corrupt_key_data[..], 0).unwrap();
+        let legacy_error = ir
+            .prove(
+                ChaCha20Rng::from_seed([46; 32]),
+                &TestParams,
+                corrupt_legacy_key,
+                &invalid_preimage,
+            )
+            .await
+            .expect_err("legacy proving must initialize the key before preprocessing");
+        assert!(
+            !legacy_error.to_string().contains("Not enough raw inputs"),
+            "legacy error order changed: {legacy_error}"
         );
     }
 
