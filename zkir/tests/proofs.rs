@@ -193,6 +193,14 @@ mod proof_tests {
 
         let corrupt_legacy_key: ProverKey =
             Deserializable::deserialize(&mut &corrupt_key_data[..], 0).unwrap();
+        let expected_key_error = {
+            let key: ProverKey =
+                Deserializable::deserialize(&mut &corrupt_key_data[..], 0).unwrap();
+            key.init()
+                .err()
+                .expect("corrupt key must fail initialization")
+                .to_string()
+        };
         let legacy_error = ir
             .prove(
                 ChaCha20Rng::from_seed([46; 32]),
@@ -202,10 +210,7 @@ mod proof_tests {
             )
             .await
             .expect_err("legacy proving must initialize the key before preprocessing");
-        assert!(
-            !legacy_error.to_string().contains("Not enough raw inputs"),
-            "legacy error order changed: {legacy_error}"
-        );
+        assert_eq!(legacy_error.to_string(), expected_key_error);
     }
 
     #[actix_rt::test]
