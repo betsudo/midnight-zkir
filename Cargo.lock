@@ -296,6 +296,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2f6c7dbe95a6ed67ad9f18e57daf93a2f034c524b99fd2b76d18fdfeb6660aa"
 dependencies = [
  "hybrid-array",
+ "zeroize",
 ]
 
 [[package]]
@@ -800,6 +801,7 @@ dependencies = [
  "const-oid 0.10.2",
  "crypto-common 0.2.2",
  "ctutils",
+ "zeroize",
 ]
 
 [[package]]
@@ -1767,10 +1769,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
-name = "midnight-base-crypto"
-version = "1.1.0"
+name = "memmap2"
+version = "0.9.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4abb5312e6b54d19bbea636017abbc3e706de35885aa83781c8b6ccd7f27f0ae"
+checksum = "6b0ca1155a9ecc25aa12e8313a119f32edf0255fea2f44839c4ac0a12b2ac157"
+dependencies = [
+ "libc",
+]
+
+[[package]]
+name = "midnight-base-crypto"
+version = "1.1.1"
+source = "git+https://github.com/betsudo/midnight-ledger?rev=43ea9d99c81c254059319669b9c2406af173257d#43ea9d99c81c254059319669b9c2406af173257d"
 dependencies = [
  "anyhow",
  "atomic-write-file",
@@ -1804,8 +1814,7 @@ dependencies = [
 [[package]]
 name = "midnight-base-crypto-derive"
 version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30565daf666e3016d2bb72073e2c3ff61ac3ad123912eec764a72e20758082f2"
+source = "git+https://github.com/betsudo/midnight-ledger?rev=43ea9d99c81c254059319669b9c2406af173257d#43ea9d99c81c254059319669b9c2406af173257d"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1840,8 +1849,7 @@ dependencies = [
 [[package]]
 name = "midnight-curves"
 version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "efaa236cfabccb367c0a89e58a6e8f0b4ba70fb81efd07acfe1d3a0ec3bed081"
+source = "git+https://github.com/betsudo/midnight-zk?rev=f31782480db5ca0e4c420e49c035b9d056cdf1c5#f31782480db5ca0e4c420e49c035b9d056cdf1c5"
 dependencies = [
  "bitvec",
  "blst",
@@ -1870,14 +1878,15 @@ dependencies = [
 [[package]]
 name = "midnight-proofs"
 version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22b1526bc7d9d1fad29505a15b81fe54aa7698a7dcd1948b447021bc8571f543"
+source = "git+https://github.com/betsudo/midnight-zk?rev=f31782480db5ca0e4c420e49c035b9d056cdf1c5#f31782480db5ca0e4c420e49c035b9d056cdf1c5"
 dependencies = [
  "blake2b_simd",
  "ff 0.13.1",
  "getrandom 0.2.17",
  "group 0.13.0",
  "itertools",
+ "libc",
+ "memmap2",
  "midnight-curves",
  "num-bigint",
  "rand_chacha 0.3.1",
@@ -1885,14 +1894,14 @@ dependencies = [
  "rayon",
  "serde",
  "serde_derive",
+ "tempfile",
  "tracing",
 ]
 
 [[package]]
 name = "midnight-serialize"
-version = "1.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa6eeb27093ecf9cd7052a5f3d220b6a1a1c77833b03d1d83e3a6e5d196b446e"
+version = "1.2.1"
+source = "git+https://github.com/betsudo/midnight-ledger?rev=43ea9d99c81c254059319669b9c2406af173257d#43ea9d99c81c254059319669b9c2406af173257d"
 dependencies = [
  "crypto",
  "konst",
@@ -1908,8 +1917,7 @@ dependencies = [
 [[package]]
 name = "midnight-serialize-macros"
 version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d470675b20968294a11b14680c540c1ba9cccdbe89437ac939dfa688e91baf4"
+source = "git+https://github.com/betsudo/midnight-ledger?rev=43ea9d99c81c254059319669b9c2406af173257d#43ea9d99c81c254059319669b9c2406af173257d"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1918,14 +1926,12 @@ dependencies = [
 
 [[package]]
 name = "midnight-storage-core"
-version = "1.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "127c657a19ff96b3e1501727fa5b17ebdd4429dbfa1d8b9752d8f44e5c551bcf"
+version = "1.2.3"
+source = "git+https://github.com/betsudo/midnight-ledger?rev=43ea9d99c81c254059319669b9c2406af173257d#43ea9d99c81c254059319669b9c2406af173257d"
 dependencies = [
  "archery",
  "crypto",
  "derive-where",
- "digest 0.11.3",
  "fake",
  "hex",
  "itertools",
@@ -1939,16 +1945,15 @@ dependencies = [
  "proptest-derive",
  "rand 0.8.7",
  "serde",
- "sha2 0.11.0",
+ "sha2 0.10.9",
  "sysinfo",
  "tempfile",
 ]
 
 [[package]]
 name = "midnight-storage-macros"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6aeb4dc8c8ea5a6495036a88943c38cce40c23fc0181e0073ca52b7124800960"
+version = "1.0.1"
+source = "git+https://github.com/betsudo/midnight-ledger?rev=43ea9d99c81c254059319669b9c2406af173257d#43ea9d99c81c254059319669b9c2406af173257d"
 dependencies = [
  "midnight-serialize-macros",
  "proc-macro2",
@@ -1958,9 +1963,8 @@ dependencies = [
 
 [[package]]
 name = "midnight-transient-crypto"
-version = "3.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f510bdf13d553dc00c9ee5c2dc8d2321def0205499d91fdc9d07128b5f628aa"
+version = "3.1.0"
+source = "git+https://github.com/betsudo/midnight-ledger?rev=43ea9d99c81c254059319669b9c2406af173257d#43ea9d99c81c254059319669b9c2406af173257d"
 dependencies = [
  "anyhow",
  "blake2b_simd",
@@ -1972,6 +1976,7 @@ dependencies = [
  "group 0.13.0",
  "lazy_static",
  "lru",
+ "memmap2",
  "midnight-base-crypto",
  "midnight-base-crypto-derive",
  "midnight-circuits",
@@ -1989,6 +1994,7 @@ dependencies = [
  "serde_json",
  "sha2 0.11.0",
  "subtle",
+ "tempfile",
  "tracing",
  "zeroize",
 ]
@@ -1996,8 +2002,7 @@ dependencies = [
 [[package]]
 name = "midnight-zk-stdlib"
 version = "2.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73819f4cd779e365545109dbbd759fe0055df4ea73f6e0ddb873281c1c8014ec"
+source = "git+https://github.com/betsudo/midnight-zk?rev=f31782480db5ca0e4c420e49c035b9d056cdf1c5#f31782480db5ca0e4c420e49c035b9d056cdf1c5"
 dependencies = [
  "base64 0.13.1",
  "bincode",

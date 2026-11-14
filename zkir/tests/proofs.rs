@@ -19,6 +19,7 @@ mod proof_tests {
     use super::common::{TestParams, TestResolver};
     use group::{Group, ff::Field};
     use midnight_curves::{Fr as JubjubFr, JubjubSubgroup, curve25519, k256, p256};
+    use midnight_proofs::config::{CancelToken, ProverConfig, ProverContext};
     use midnight_zkir::{
         Identifier, IrSource, Preprocessed, ir_instructions::encode::encode_offcircuit,
         ir_types::IrValue,
@@ -32,11 +33,9 @@ mod proof_tests {
     use std::collections::HashMap;
     use transient_crypto::curve::EmbeddedGroupAffine;
     use transient_crypto::hash::transient_hash;
-    use transient_crypto::proofs::Proof;
     #[cfg(feature = "proptest")]
-    use transient_crypto::proofs::{
-        KeyLocation, PARAMS_VERIFIER, ProofPreimage, VerifierKey, Zkir,
-    };
+    use transient_crypto::proofs::{KeyLocation, PARAMS_VERIFIER, ProofPreimage, VerifierKey};
+    use transient_crypto::proofs::{Proof, Zkir};
 
     type ProverKey = transient_crypto::proofs::ProverKey<IrSource>;
 
@@ -135,6 +134,82 @@ mod proof_tests {
             vk.verify(&PARAMS_VERIFIER, &proof, [43.into()].into_iter())
                 .is_err()
         );
+
+        let context_key: ProverKey = Deserializable::deserialize(&mut &pk_data[..], 0).unwrap();
+        let (context_proof, _, _) = ir
+            .prove_with_context(
+                ChaCha20Rng::from_seed([43; 32]),
+                &TestParams,
+                context_key,
+                &preimage,
+                &ProverContext::new(ProverConfig::heap()),
+            )
+            .await
+            .expect("request-scoped V3 proof should succeed");
+        vk.verify(&PARAMS_VERIFIER, &context_proof, [42.into()].into_iter())
+            .expect("request-scoped V3 proof should verify");
+
+        let token = CancelToken::new();
+        token.cancel();
+        let cancelled = ProverContext::new(ProverConfig::heap()).with_cancel(token);
+        let cancelled_key: ProverKey = Deserializable::deserialize(&mut &pk_data[..], 0).unwrap();
+        let error = ir
+            .prove_with_context(
+                ChaCha20Rng::from_seed([44; 32]),
+                &TestParams,
+                cancelled_key,
+                &preimage,
+                &cancelled,
+            )
+            .await
+            .expect_err("pre-cancelled V3 request should stop before key loading");
+        assert!(matches!(
+            error.downcast_ref::<midnight_proofs::plonk::Error>(),
+            Some(midnight_proofs::plonk::Error::Cancelled {
+                phase: "zkir.preprocess.start"
+            })
+        ));
+
+        let mut invalid_preimage = preimage.clone();
+        invalid_preimage.inputs.clear();
+        let mut corrupt_key_data = Vec::new();
+        Serializable::serialize(&vec![0xffu8], &mut corrupt_key_data).unwrap();
+        let corrupt_key: ProverKey =
+            Deserializable::deserialize(&mut &corrupt_key_data[..], 0).unwrap();
+        let error = ir
+            .prove_with_context(
+                ChaCha20Rng::from_seed([45; 32]),
+                &TestParams,
+                corrupt_key,
+                &invalid_preimage,
+                &ProverContext::new(ProverConfig::heap()),
+            )
+            .await
+            .expect_err("malformed preimage should be rejected before key loading");
+        assert!(
+            error.to_string().contains("Not enough raw inputs"),
+            "expected preimage validation error, got: {error}"
+        );
+
+        let corrupt_legacy_key: ProverKey =
+            Deserializable::deserialize(&mut &corrupt_key_data[..], 0).unwrap();
+        let expected_key_error = {
+            let key: ProverKey =
+                Deserializable::deserialize(&mut &corrupt_key_data[..], 0).unwrap();
+            key.init()
+                .expect_err("corrupt key must fail initialization")
+                .to_string()
+        };
+        let legacy_error = ir
+            .prove(
+                ChaCha20Rng::from_seed([46; 32]),
+                &TestParams,
+                corrupt_legacy_key,
+                &invalid_preimage,
+            )
+            .await
+            .expect_err("legacy proving must initialize the key before preprocessing");
+        assert_eq!(legacy_error.to_string(), expected_key_error);
     }
 
     #[actix_rt::test]

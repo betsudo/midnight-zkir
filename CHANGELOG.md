@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+
+- LOCAL PORT: external ZKIR v3 can forward an explicit request-owned proving context to the release-compatible optimized proofs 0.8.2 and stdlib 2.4.0 fork sources. The existing context-free entry point and ZKIR/key wire formats remain unchanged. This source graph is pinned by immutable betsudo commits and is not a published replacement for ZKIR 3.2.1.
+- LOCAL PORT: context proving now loads the serialized prover key under the same request policy, using the policy cache and cancellation gate in the Ledger fork. The context-free loader remains unchanged.
+- LOCAL PORT: directly generated V3 keys retain their keygen process policy, so context proving can reuse them when the request matches and does not require mapped key storage. A mapped-key request must serialize and reload the key under that policy.
+
 ## ZKIR 3.2.1
 
 ### Fixes
