@@ -1,5 +1,7 @@
 # midnight-zkir
 
+See [Ledger9 V3 proving context](docs/ledger9-v3-context.md) for the opt-in native policy, cancellation behavior, and published-source baseline.
+
 The zero-knowledge intermediate representation (ZKIR) used by the [Midnight](https://midnight.network) network.
 
 ZKIR is the circuit format that the [Compact](https://docs.midnight.network/develop/reference/compact/) compiler targets. This repository contains the IR definition, the virtual machine that evaluates it, and the tooling that compiles ZKIR circuits into PLONK proving and verifying keys.
