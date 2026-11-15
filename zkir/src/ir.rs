@@ -90,14 +90,11 @@ impl Zkir for IrSource {
     ) -> Result<(Proof, Vec<Fr>, Vec<Option<usize>>), ProvingError> {
         use midnight_zk_stdlib::prove;
 
-        let params_k = params.get_params(pk.init()?.k()).await?;
+        let pk = pk.init()?;
+        let params_k = params.get_params(pk.k()).await?;
         let preproc = self.preprocess(preimage)?;
         let pis = preproc.pis.clone();
         let pi_skips = preproc.pi_skips.clone();
-
-        let pk = pk
-            .init()
-            .map_err(|_| anyhow::anyhow!("Could not init pk"))?;
 
         let proof = prove::<_, TranscriptHash>(params_k.as_ref(), &pk, self, &pis, preproc, rng)?;
 
