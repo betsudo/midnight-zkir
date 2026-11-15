@@ -19,6 +19,7 @@ mod proof_tests {
     use super::common::{TestParams, TestResolver};
     use group::{Group, ff::Field};
     use midnight_curves::{Fr as JubjubFr, JubjubSubgroup, curve25519, k256, p256};
+    use midnight_proofs::config::ProverContext;
     use midnight_zkir::{
         Identifier, IrSource, Preprocessed, ir_instructions::encode::encode_offcircuit,
         ir_types::IrValue,
@@ -96,6 +97,7 @@ mod proof_tests {
         let ir = IrSource::load(ir_raw.as_bytes()).unwrap();
 
         let (pk, vk) = ir.keygen(&TestParams).await.unwrap();
+        let generated_pk = pk.clone();
         let mut pk_data = Vec::new();
         let mut vk_data = Vec::new();
         Serializable::serialize(&pk, &mut pk_data).unwrap();
@@ -135,6 +137,22 @@ mod proof_tests {
             vk.verify(&PARAMS_VERIFIER, &proof, [43.into()].into_iter())
                 .is_err()
         );
+        // Both freshly generated and legacy-initialized keys must remain
+        // usable through the context API's default heap policy.
+        for key in [generated_pk, pk] {
+            let (proof, _, _) = ir
+                .prove_with_context(
+                    ChaCha20Rng::from_seed([43; 32]),
+                    &TestParams,
+                    key,
+                    &preimage,
+                    &ProverContext::default(),
+                )
+                .await
+                .unwrap();
+            vk.verify(&PARAMS_VERIFIER, &proof, [42.into()].into_iter())
+                .unwrap();
+        }
     }
 
     #[actix_rt::test]
