@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Added
+
+- Add an opt-in V3 proving context for request-local cancellation and native
+  mapped-key/coset policy, while retaining the existing heap proving path.
+
+### Fixes
+
+- Initialize a V3 proving key once and preserve its original load error instead
+  of replacing it with a generic initialization message.
+
 ## ZKIR 3.2.1
 
 ### Fixes
