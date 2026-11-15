@@ -12,12 +12,12 @@ default-members = [
 # Fork-only integration pins for the Ledger9 context API. Keep this commit
 # separate from the upstream-facing ZKIR source series.
 [patch.crates-io]
-midnight-transient-crypto = { git = "https://github.com/betsudo/midnight-ledger", rev = "804c50acfa09312d4cafca763ad760f111e9e471" }
-midnight-base-crypto = { git = "https://github.com/betsudo/midnight-ledger", rev = "804c50acfa09312d4cafca763ad760f111e9e471" }
-midnight-serialize = { git = "https://github.com/betsudo/midnight-ledger", rev = "804c50acfa09312d4cafca763ad760f111e9e471" }
-midnight-proofs = { git = "https://github.com/betsudo/midnight-zk", rev = "6529eaa4e689bb824bd1a4ca6c543cd64f6eb817" }
-midnight-zk-stdlib = { git = "https://github.com/betsudo/midnight-zk", rev = "6529eaa4e689bb824bd1a4ca6c543cd64f6eb817" }
-midnight-curves = { git = "https://github.com/betsudo/midnight-zk", rev = "6529eaa4e689bb824bd1a4ca6c543cd64f6eb817" }
+midnight-transient-crypto = { git = "https://github.com/betsudo/midnight-ledger", rev = "f962e61d404ddf9989d4d798dbf07f4efe278688" }
+midnight-base-crypto = { git = "https://github.com/betsudo/midnight-ledger", rev = "f962e61d404ddf9989d4d798dbf07f4efe278688" }
+midnight-serialize = { git = "https://github.com/betsudo/midnight-ledger", rev = "f962e61d404ddf9989d4d798dbf07f4efe278688" }
+midnight-proofs = { git = "https://github.com/betsudo/midnight-zk", rev = "505156ec0987c98ead6908d5418b9fb827595e2b" }
+midnight-zk-stdlib = { git = "https://github.com/betsudo/midnight-zk", rev = "505156ec0987c98ead6908d5418b9fb827595e2b" }
+midnight-curves = { git = "https://github.com/betsudo/midnight-zk", rev = "505156ec0987c98ead6908d5418b9fb827595e2b" }
 
 [workspace.package]
 license = "Apache-2.0"
