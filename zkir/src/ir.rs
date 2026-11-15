@@ -13,6 +13,7 @@
 
 use anyhow::Result;
 use base_crypto::fab::Alignment;
+use midnight_proofs::config::{ProverConfig, ProverContext};
 use midnight_proofs::dev::cost_model::CircuitModel;
 #[cfg(feature = "proptest")]
 use proptest_derive::Arbitrary;
@@ -51,6 +52,48 @@ pub struct IrSource {
 tag_enforcement_test!(IrSource);
 tag_enforcement_test!(ProverKey<IrSource>);
 
+impl IrSource {
+    async fn prove_impl(
+        &self,
+        rng: impl Rng + CryptoRng,
+        params: &impl ParamsProverProvider,
+        pk: ProverKey<Self>,
+        preimage: &ProofPreimage,
+        context: Option<&ProverContext>,
+    ) -> Result<(Proof, Vec<Fr>, Vec<Option<usize>>), ProvingError> {
+        let pk = match context {
+            Some(context) => pk.init_with_context(context)?,
+            None => pk.init()?,
+        };
+        let params_k = params.get_params(pk.k()).await?;
+        let preproc = self.preprocess(preimage)?;
+        let pis = preproc.pis.clone();
+        let pi_skips = preproc.pi_skips.clone();
+
+        let proof = match context {
+            Some(context) => midnight_zk_stdlib::prove_with_context::<_, TranscriptHash>(
+                context,
+                params_k.as_ref(),
+                &pk,
+                self,
+                &pis,
+                preproc,
+                rng,
+            )?,
+            None => midnight_zk_stdlib::prove::<_, TranscriptHash>(
+                params_k.as_ref(),
+                &pk,
+                self,
+                &pis,
+                preproc,
+                rng,
+            )?,
+        };
+
+        Ok((Proof(proof), pis.into_iter().map(Fr).collect(), pi_skips))
+    }
+}
+
 #[cfg_attr(feature = "proptest", derive(Arbitrary))]
 #[derive(
     Clone,
@@ -88,20 +131,19 @@ impl Zkir for IrSource {
         pk: ProverKey<Self>,
         preimage: &ProofPreimage,
     ) -> Result<(Proof, Vec<Fr>, Vec<Option<usize>>), ProvingError> {
-        use midnight_zk_stdlib::prove;
+        self.prove_impl(rng, params, pk, preimage, None).await
+    }
 
-        let params_k = params.get_params(pk.init()?.k()).await?;
-        let preproc = self.preprocess(preimage)?;
-        let pis = preproc.pis.clone();
-        let pi_skips = preproc.pi_skips.clone();
-
-        let pk = pk
-            .init()
-            .map_err(|_| anyhow::anyhow!("Could not init pk"))?;
-
-        let proof = prove::<_, TranscriptHash>(params_k.as_ref(), &pk, self, &pis, preproc, rng)?;
-
-        Ok((Proof(proof), pis.into_iter().map(Fr).collect(), pi_skips))
+    async fn prove_with_context(
+        &self,
+        rng: impl Rng + CryptoRng,
+        params: &impl ParamsProverProvider,
+        pk: ProverKey<Self>,
+        preimage: &ProofPreimage,
+        context: &ProverContext,
+    ) -> Result<(Proof, Vec<Fr>, Vec<Option<usize>>), ProvingError> {
+        self.prove_impl(rng, params, pk, preimage, Some(context))
+            .await
     }
 
     fn k(&self) -> u8 {
@@ -146,6 +188,17 @@ impl Zkir for IrSource {
         midnight_zk_stdlib::MidnightPK::<Self>::read(
             &mut { reader },
             midnight_proofs::utils::SerdeFormat::RawBytesUnchecked,
+        )
+    }
+
+    fn read_raw_pk_with_policy(
+        reader: impl Read,
+        policy: &ProverConfig,
+    ) -> std::io::Result<Self::ProverKey> {
+        midnight_zk_stdlib::MidnightPK::<Self>::read_with_policy(
+            &mut { reader },
+            midnight_proofs::utils::SerdeFormat::RawBytesUnchecked,
+            policy,
         )
     }
 
