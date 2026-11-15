@@ -15,9 +15,9 @@ default-members = [
 midnight-transient-crypto = { git = "https://github.com/betsudo/midnight-ledger", rev = "d09c990967cec4c8ac49af48211e70d4f0b98662" }
 midnight-base-crypto = { git = "https://github.com/betsudo/midnight-ledger", rev = "d09c990967cec4c8ac49af48211e70d4f0b98662" }
 midnight-serialize = { git = "https://github.com/betsudo/midnight-ledger", rev = "d09c990967cec4c8ac49af48211e70d4f0b98662" }
-midnight-proofs = { git = "https://github.com/betsudo/midnight-zk", rev = "5f75b85ee5b58046b3fec81ca86d5b95a9140f4a" }
-midnight-zk-stdlib = { git = "https://github.com/betsudo/midnight-zk", rev = "5f75b85ee5b58046b3fec81ca86d5b95a9140f4a" }
-midnight-curves = { git = "https://github.com/betsudo/midnight-zk", rev = "5f75b85ee5b58046b3fec81ca86d5b95a9140f4a" }
+midnight-proofs = { git = "https://github.com/betsudo/midnight-zk", rev = "cdbbce716930578d15a4adc7ed070712f81e314f" }
+midnight-zk-stdlib = { git = "https://github.com/betsudo/midnight-zk", rev = "cdbbce716930578d15a4adc7ed070712f81e314f" }
+midnight-curves = { git = "https://github.com/betsudo/midnight-zk", rev = "cdbbce716930578d15a4adc7ed070712f81e314f" }
 
 [workspace.package]
 license = "Apache-2.0"
