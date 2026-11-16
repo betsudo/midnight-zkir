@@ -57,6 +57,30 @@ Review the source alignment and the small `ir.rs` API change separately.
 Before promotion, confirm native default and feature builds, Wasm heap and
 feature builds, generated/initialized/serialized key cases, cancellation,
 and a V3 TypeScript preimage/Node-Wasm-to-native proof exchange. The
-small-circuit exchange has passed locally; released per-`k` keys and
-browser execution require their own evidence. Keep exact dependency heads
-and test artifacts with that evidence.
+small-circuit exchange has passed locally. Keep exact dependency heads and
+test artifacts with that evidence.
+
+## Ledger9 artifact qualification
+
+[Ledger PR #39](https://github.com/betsudo/midnight-ledger/pull/39)
+uses the official k=4 SRS with a key generated locally from published
+ZKIR 3.2.1 source. It separately uses the official k=6 SRS and an
+independently published Midnight JS Compact 0.36.1 testkit V3 key; the
+key, verifier, and IR hashes match the pinned SDK manifest. Optimized
+native Ledger9 proves and verifies with heap, mapped SRS/key, and forced
+coset spill. An opt-in local Node/Wasm test proves with the published
+testkit key and TypeScript preimage, then verifies in native Ledger9.
+Ordinary hosted CI does not run that cross-runtime test.
+
+At executable Ledger head `2b3ee462`, the focused native-memory V3
+artifact test, feature-enabled Wasm target compilation, eight-job
+[build-and-test workflow](https://github.com/betsudo/midnight-ledger/actions/runs/43834105721),
+and [coverage](https://github.com/betsudo/midnight-ledger/actions/runs/43834104987)
+passed. These k=4/k=6 cases establish format and interoperability; they
+do not establish high-`k` memory benefit, browser execution, or
+deployed-dApp key coverage. Those gates remain under
+[Ledger #30](https://github.com/betsudo/midnight-ledger/issues/30),
+[Ledger #12](https://github.com/betsudo/midnight-ledger/issues/12), and
+[Ledger #26](https://github.com/betsudo/midnight-ledger/issues/26).
+The cross-repository optimization PR map and upstream landing order are
+in [ZK PR #13](https://github.com/betsudo/midnight-zk/pull/13).
