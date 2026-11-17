@@ -24,11 +24,10 @@ env:
 
 jobs:
   build:
-    # Preserve the caller's `macos-latest` check name while using GitHub's
-    # standard Intel pool. The M1 pool repeatedly failed before acquisition;
-    # ARM remains qualified by the Ubuntu ARM lane and downstream mobile
-    # target checks.
-    runs-on: ${{ inputs.os == 'macos-latest' && 'macos-15-intel' || inputs.os }}
+    # Preserve the caller's `macos-latest` check name while selecting an
+    # explicit ARM image. The pinned Nixpkgs no longer supports x86_64-darwin,
+    # so an Intel fallback cannot qualify this graph.
+    runs-on: ${{ inputs.os == 'macos-latest' && 'macos-26' || inputs.os }}
     permissions:
       contents: read
     outputs:
@@ -95,7 +94,7 @@ jobs:
 
   shard:
     needs: build
-    runs-on: ${{ inputs.os == 'macos-latest' && 'macos-15-intel' || inputs.os }}
+    runs-on: ${{ inputs.os == 'macos-latest' && 'macos-26' || inputs.os }}
     permissions:
       contents: read
     strategy:
