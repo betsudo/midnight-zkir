@@ -32,9 +32,9 @@ proptest = [
 ]
 
 [dependencies]
-base-crypto = { version = "=1.1.1", package = "midnight-base-crypto", git = "https://github.com/betsudo/midnight-ledger", rev = "f82ac287442fc15c4eb79f02dcb6510373979eab" }
-serialize = { version = "=1.2.1", package = "midnight-serialize", git = "https://github.com/betsudo/midnight-ledger", rev = "f82ac287442fc15c4eb79f02dcb6510373979eab" }
-transient-crypto = { version = "=3.1.0", package = "midnight-transient-crypto", git = "https://github.com/betsudo/midnight-ledger", rev = "f82ac287442fc15c4eb79f02dcb6510373979eab", features = [
+base-crypto = { version = "=1.1.1", package = "midnight-base-crypto", git = "https://github.com/betsudo/midnight-ledger", rev = "f273996eaba509aaf5f6d935f2f9df5c8ec98bf2" }
+serialize = { version = "=1.2.1", package = "midnight-serialize", git = "https://github.com/betsudo/midnight-ledger", rev = "f273996eaba509aaf5f6d935f2f9df5c8ec98bf2" }
+transient-crypto = { version = "=3.1.0", package = "midnight-transient-crypto", git = "https://github.com/betsudo/midnight-ledger", rev = "f273996eaba509aaf5f6d935f2f9df5c8ec98bf2", features = [
   "cli",
 ] }
 
