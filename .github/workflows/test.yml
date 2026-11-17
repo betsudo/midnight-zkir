@@ -63,7 +63,19 @@ jobs:
           save-if: ${{ github.event_name == 'push' }}
 
       - name: Build tests (default features)
-        run: nix develop -c cargo nextest archive --release --archive-file nextest-archive.tar.zst
+        env:
+          TARGET_OS: ${{ inputs.os }}
+        run: |
+          # The self-hosted macOS runner enforces a 15-minute execution window.
+          # A cold release-profile archive is terminated before tests can start,
+          # while the normal test profile still compiles and executes the same
+          # default-feature suite. Keep release qualification on both Linux
+          # architectures and use the test profile only for the macOS lane.
+          if [[ "$TARGET_OS" == "macos-latest" ]]; then
+            nix develop -c cargo nextest archive --archive-file nextest-archive.tar.zst
+          else
+            nix develop -c cargo nextest archive --release --archive-file nextest-archive.tar.zst
+          fi
 
       - name: List shards
         id: shards
